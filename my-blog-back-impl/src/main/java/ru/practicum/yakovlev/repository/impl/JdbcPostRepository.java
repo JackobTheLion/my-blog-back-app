@@ -192,8 +192,10 @@ public class JdbcPostRepository implements PostRepository {
                     "%" + titlePart.toLowerCase() + "%"
             );
         }
-        LinkedList<String> tags = criteria.tags();
-        if (tags != null && !tags.isEmpty()) {
+        List<String> tags = criteria.tags() == null
+                ? List.of()
+                : criteria.tags().stream().distinct().toList();
+        if (!tags.isEmpty()) {
             conditions.add("""
                     p.id IN (
                         SELECT pt.post_id
