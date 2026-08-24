@@ -9,6 +9,7 @@ import ru.practicum.yakovlev.storage.ImageStorage;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.UUID;
 
 @Component
 @Slf4j
@@ -24,13 +25,13 @@ public class FileSystemImageStorage implements ImageStorage {
     @Override
     public String save(Long postId, String originalFilename, byte[] content) {
         String filename = sanitizeFilename(originalFilename);
-        Path relativePath = Path.of(postId.toString(), System.currentTimeMillis() + "_" + filename);
-        Path target = resolveInsideRoot(relativePath);
+        String storageKey = postId + "/" + UUID.randomUUID() + "_" + filename;
+        Path target = resolveInsideRoot(Path.of(storageKey));
         try {
             Files.createDirectories(target.getParent());
             Files.write(target, content);
             log.info("Image saved: postId={}, path={}, sizeBytes={}", postId, target, content.length);
-            return relativePath.toString();
+            return storageKey;
         } catch (IOException exception) {
             throw new ImageStorageException("Failed to save image for post " + postId, exception);
         }

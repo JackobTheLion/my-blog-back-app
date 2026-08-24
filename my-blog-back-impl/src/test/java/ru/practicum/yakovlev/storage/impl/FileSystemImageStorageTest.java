@@ -30,8 +30,7 @@ class FileSystemImageStorageTest {
 
         String relativePath = imageStorage.save(42L, "../../avatar.png", content);
 
-        assertTrue(relativePath.startsWith("42/"));
-        assertTrue(relativePath.endsWith("_avatar.png"));
+        assertTrue(relativePath.matches("42/[0-9a-f-]{36}_avatar\\.png"));
         assertFalse(relativePath.contains(".."));
         assertTrue(Files.exists(storageDirectory.resolve(relativePath)));
         assertArrayEquals(content, imageStorage.read(relativePath));
