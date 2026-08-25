@@ -12,9 +12,10 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import ru.practicum.yakovlev.dto.CreatePostRequest;
 import ru.practicum.yakovlev.dto.FullPostResponseDto;
 import ru.practicum.yakovlev.dto.PageResponse;
-import ru.practicum.yakovlev.dto.PostRequestDto;
+import ru.practicum.yakovlev.dto.UpdatePostRequest;
 import ru.practicum.yakovlev.exception.ImageStorageException;
 import ru.practicum.yakovlev.exception.PostNotFoundException;
 import ru.practicum.yakovlev.service.PostService;
@@ -101,12 +102,12 @@ class PostControllerImplTest {
         JsonNode post = responseBody(mockMvc.perform(post("/posts")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"id":null,"title":"title","text":"text","tags":["#java"]}
+                                {"title":"title","text":"text","tags":["#java"]}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON)));
 
-        verify(postService).createPost(new PostRequestDto(null, "title", "text", List.of("#java")));
+        verify(postService).createPost(new CreatePostRequest("title", "text", List.of("#java")));
         assertPost(post);
     }
 
@@ -127,7 +128,20 @@ class PostControllerImplTest {
         mockMvc.perform(post("/posts")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"id":null,"title":" ","text":"","tags":[""]}
+                                {"title":" ","text":"","tags":[""]}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("Rejects post creation without tags")
+    void shouldRejectPostCreationWithoutTags() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"title","text":"text"}
                                 """))
                 .andExpect(status().isBadRequest());
 
@@ -147,8 +161,35 @@ class PostControllerImplTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON)));
 
-        verify(postService).updatePost(1L, new PostRequestDto(1L, "title", "text", List.of()));
+        verify(postService).updatePost(1L, new UpdatePostRequest(1L, "title", "text", List.of()));
         assertPost(post);
+    }
+
+    @Test
+    @DisplayName("Rejects post update without a body identifier")
+    void shouldRejectPostUpdateWithoutBodyId() throws Exception {
+        mockMvc.perform(put("/posts/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"title":"title","text":"text","tags":[]}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
+    @DisplayName("Returns HTTP 400 when post identifiers differ")
+    void shouldReturnBadRequestWhenPostIdentifiersDiffer() throws Exception {
+        doThrow(new IllegalArgumentException("Post id in path and body must match"))
+                .when(postService).updatePost(eq(1L), any());
+
+        mockMvc.perform(put("/posts/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"id":2,"title":"title","text":"text","tags":[]}
+                                """))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -251,7 +292,7 @@ class PostControllerImplTest {
         return new FullPostResponseDto(1L, "title", "text", List.of("#java"), 2L, 3L);
     }
 
-    private static JsonNode responseBody(ResultActions resultActions) throws Exception {
+    private static JsonNode responseBody(ResultActions resultActions) {
         return JSON_MAPPER.readTree(resultActions.andReturn().getResponse().getContentAsByteArray());
     }
 

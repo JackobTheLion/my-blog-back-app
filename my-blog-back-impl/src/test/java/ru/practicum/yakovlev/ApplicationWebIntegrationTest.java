@@ -14,9 +14,7 @@ import org.springframework.web.context.WebApplicationContext;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -66,7 +64,7 @@ class ApplicationWebIntegrationTest extends AbstractIntegrationTest {
         JsonNode createdComment = responseBody(mockMvc.perform(post("/posts/1/comments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"text":"wired comment"}
+                                {"text":"wired comment","postId":1}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON)));
@@ -99,7 +97,7 @@ class ApplicationWebIntegrationTest extends AbstractIntegrationTest {
         );
     }
 
-    private JsonNode responseBody(ResultActions resultActions) throws Exception {
+    private JsonNode responseBody(ResultActions resultActions) {
         return JSON_MAPPER.readTree(resultActions.andReturn().getResponse().getContentAsByteArray());
     }
 }

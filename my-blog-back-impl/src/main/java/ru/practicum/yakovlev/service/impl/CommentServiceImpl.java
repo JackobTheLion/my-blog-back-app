@@ -3,8 +3,9 @@ package ru.practicum.yakovlev.service.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import ru.practicum.yakovlev.dto.CommentRequestDto;
 import ru.practicum.yakovlev.dto.CommentResponseDto;
+import ru.practicum.yakovlev.dto.CreateCommentRequest;
+import ru.practicum.yakovlev.dto.UpdateCommentRequest;
 import ru.practicum.yakovlev.exception.CommentNotFoundException;
 import ru.practicum.yakovlev.mapper.CommentMapper;
 import ru.practicum.yakovlev.model.Comment;
@@ -37,19 +38,28 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public CommentResponseDto createComment(CommentRequestDto commentDto, Long postId) {
+    public CommentResponseDto createComment(CreateCommentRequest commentRequest, Long postId) {
+        if (!postId.equals(commentRequest.postId())) {
+            throw new IllegalArgumentException("Post id in path and body must match");
+        }
         log.info("Creating comment: postId={}", postId);
-        Comment entity = commentMapper.toEntity(commentDto, postId);
+        Comment entity = commentMapper.toEntity(commentRequest);
         Comment save = commentRepository.save(entity);
         log.info("Comment created: postId={}, commentId={}", postId, save.getId());
         return commentMapper.toDto(save);
     }
 
     @Override
-    public CommentResponseDto update(CommentRequestDto commentDto, Long postId, Long commentId) {
+    public CommentResponseDto update(UpdateCommentRequest commentRequest, Long postId, Long commentId) {
+        if (!postId.equals(commentRequest.postId())) {
+            throw new IllegalArgumentException("Post id in path and body must match");
+        }
+        if (!commentId.equals(commentRequest.id())) {
+            throw new IllegalArgumentException("Comment id in path and body must match");
+        }
         log.info("Updating comment: postId={}, commentId={}", postId, commentId);
         Comment existing = getCommentOrThrow(postId, commentId);
-        Comment update = commentMapper.update(existing, commentDto);
+        Comment update = commentMapper.update(existing, commentRequest);
         Comment updated = commentRepository.update(update);
         log.info("Comment updated: postId={}, commentId={}", postId, commentId);
         return commentMapper.toDto(updated);

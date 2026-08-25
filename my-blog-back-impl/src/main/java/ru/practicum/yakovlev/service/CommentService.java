@@ -1,7 +1,8 @@
 package ru.practicum.yakovlev.service;
 
-import ru.practicum.yakovlev.dto.CommentRequestDto;
 import ru.practicum.yakovlev.dto.CommentResponseDto;
+import ru.practicum.yakovlev.dto.CreateCommentRequest;
+import ru.practicum.yakovlev.dto.UpdateCommentRequest;
 
 import java.util.List;
 
@@ -11,9 +12,9 @@ public interface CommentService {
 
     CommentResponseDto getComment(Long postId, Long commentId);
 
-    CommentResponseDto createComment(CommentRequestDto commentDto, Long postId);
+    CommentResponseDto createComment(CreateCommentRequest commentRequest, Long postId);
 
-    CommentResponseDto update(CommentRequestDto commentDto, Long postId, Long commentId);
+    CommentResponseDto update(UpdateCommentRequest commentRequest, Long postId, Long commentId);
 
     void deleteComment(Long postId, Long commentId);
 

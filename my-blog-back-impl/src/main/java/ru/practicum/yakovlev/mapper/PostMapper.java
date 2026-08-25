@@ -5,8 +5,9 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.Named;
+import ru.practicum.yakovlev.dto.CreatePostRequest;
 import ru.practicum.yakovlev.dto.FullPostResponseDto;
-import ru.practicum.yakovlev.dto.PostRequestDto;
+import ru.practicum.yakovlev.dto.UpdatePostRequest;
 import ru.practicum.yakovlev.model.Post;
 import ru.practicum.yakovlev.model.Tag;
 
@@ -25,16 +26,17 @@ public abstract class PostMapper {
     @Mapping(target = "commentsCount", ignore = true)
     @Mapping(target = "likesCount", ignore = true)
     @Mapping(target = "imagePath", ignore = true)
-    @Mapping(target = "tags", expression = "java(toTags(postRequestDto.tags()))")
-    public abstract Post toEntity(PostRequestDto postRequestDto);
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "tags", expression = "java(toTags(postRequest.tags()))")
+    public abstract Post toEntity(CreatePostRequest postRequest);
 
     @Mapping(target = "comments", ignore = true)
     @Mapping(target = "commentsCount", ignore = true)
     @Mapping(target = "likesCount", ignore = true)
     @Mapping(target = "imagePath", ignore = true)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "tags", expression = "java(toTags(postRequestDto.tags()))")
-    public abstract Post update(@MappingTarget Post post, PostRequestDto postRequestDto);
+    @Mapping(target = "tags", expression = "java(toTags(postRequest.tags()))")
+    public abstract Post update(@MappingTarget Post post, UpdatePostRequest postRequest);
 
     public abstract FullPostResponseDto toFullPostResponseDto(Post post);
 
@@ -55,7 +57,7 @@ public abstract class PostMapper {
         }
         return tags.stream()
                 .map(tag -> new Tag(null, tag))
-                .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
+                .toList();
     }
 
 }

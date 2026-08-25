@@ -5,9 +5,10 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import ru.practicum.yakovlev.dto.CreatePostRequest;
 import ru.practicum.yakovlev.dto.FullPostResponseDto;
 import ru.practicum.yakovlev.dto.PageResponse;
-import ru.practicum.yakovlev.dto.PostRequestDto;
+import ru.practicum.yakovlev.dto.UpdatePostRequest;
 
 @RestController
 @RequestMapping(ApiConstants.POSTS_BASE_PATH)
@@ -19,11 +20,11 @@ public interface PostController {
                           @RequestParam("pageSize") @Min(value = 1, message = "Page size must be greater than zero") Integer size);
 
     @PostMapping
-    FullPostResponseDto createPost(@RequestBody @Valid PostRequestDto postRequestDto);
+    FullPostResponseDto createPost(@RequestBody @Valid CreatePostRequest postRequest);
 
     @PutMapping("/{id}")
     FullPostResponseDto updatePost(@PathVariable("id") @Positive Long id,
-                                   @RequestBody @Valid PostRequestDto postRequestDto);
+                                   @RequestBody @Valid UpdatePostRequest postRequest);
 
     @GetMapping("/{id}")
     FullPostResponseDto getPost(@PathVariable("id") @Positive Long id);

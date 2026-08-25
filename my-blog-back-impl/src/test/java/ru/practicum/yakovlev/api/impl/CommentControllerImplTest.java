@@ -10,8 +10,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import ru.practicum.yakovlev.dto.CommentRequestDto;
 import ru.practicum.yakovlev.dto.CommentResponseDto;
+import ru.practicum.yakovlev.dto.CreateCommentRequest;
+import ru.practicum.yakovlev.dto.UpdateCommentRequest;
 import ru.practicum.yakovlev.exception.CommentNotFoundException;
 import ru.practicum.yakovlev.service.CommentService;
 import tools.jackson.databind.JsonNode;
@@ -19,9 +20,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -76,19 +75,46 @@ class CommentControllerImplTest {
     @Test
     @DisplayName("Deserializes a comment and uses the post path identifier")
     void shouldDeserializeCommentAndUsePostPathId() throws Exception {
-        CommentRequestDto request = new CommentRequestDto("comment", null);
+        CreateCommentRequest request = new CreateCommentRequest("comment", 10L);
         when(commentService.createComment(request, 10L)).thenReturn(commentDto());
 
         JsonNode comment = responseBody(mockMvc.perform(post("/posts/10/comments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"text":"comment","postId":null}
+                                {"text":"comment","postId":10}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON)));
 
         assertComment(comment);
         verify(commentService).createComment(request, 10L);
+    }
+
+    @Test
+    @DisplayName("Rejects comment creation without a post identifier")
+    void shouldRejectCommentCreationWithoutPostId() throws Exception {
+        mockMvc.perform(post("/posts/10/comments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"text":"comment"}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(commentService);
+    }
+
+    @Test
+    @DisplayName("Returns HTTP 400 when comment creation post identifiers differ")
+    void shouldReturnBadRequestWhenCreationPostIdentifiersDiffer() throws Exception {
+        doThrow(new IllegalArgumentException("Post id in path and body must match"))
+                .when(commentService).createComment(any(), eq(10L));
+
+        mockMvc.perform(post("/posts/10/comments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"text":"comment","postId":11}
+                                """))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -127,19 +153,46 @@ class CommentControllerImplTest {
     @Test
     @DisplayName("Binds the request body and path variables when updating a comment")
     void shouldBindBodyAndPathVariablesWhenUpdatingComment() throws Exception {
-        CommentRequestDto request = new CommentRequestDto("updated", 10L);
+        UpdateCommentRequest request = new UpdateCommentRequest(20L, "updated", 10L);
         when(commentService.update(request, 10L, 20L)).thenReturn(commentDto());
 
         JsonNode comment = responseBody(mockMvc.perform(put("/posts/10/comments/20")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"text":"updated","postId":10}
+                                {"id":20,"text":"updated","postId":10}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON)));
 
         assertComment(comment);
         verify(commentService).update(request, 10L, 20L);
+    }
+
+    @Test
+    @DisplayName("Rejects comment update without a body identifier")
+    void shouldRejectCommentUpdateWithoutBodyId() throws Exception {
+        mockMvc.perform(put("/posts/10/comments/20")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"text":"updated","postId":10}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(commentService);
+    }
+
+    @Test
+    @DisplayName("Returns HTTP 400 when comment update identifiers differ")
+    void shouldReturnBadRequestWhenUpdateIdentifiersDiffer() throws Exception {
+        doThrow(new IllegalArgumentException("Comment id in path and body must match"))
+                .when(commentService).update(any(), eq(10L), eq(20L));
+
+        mockMvc.perform(put("/posts/10/comments/20")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"id":21,"text":"updated","postId":10}
+                                """))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -173,7 +226,7 @@ class CommentControllerImplTest {
         return new CommentResponseDto(20L, "comment", 10L);
     }
 
-    private static JsonNode responseBody(ResultActions resultActions) throws Exception {
+    private static JsonNode responseBody(ResultActions resultActions) {
         return JSON_MAPPER.readTree(resultActions.andReturn().getResponse().getContentAsByteArray());
     }
 

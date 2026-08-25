@@ -3,8 +3,9 @@ package ru.practicum.yakovlev.api.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.yakovlev.api.CommentController;
-import ru.practicum.yakovlev.dto.CommentRequestDto;
 import ru.practicum.yakovlev.dto.CommentResponseDto;
+import ru.practicum.yakovlev.dto.CreateCommentRequest;
+import ru.practicum.yakovlev.dto.UpdateCommentRequest;
 import ru.practicum.yakovlev.service.CommentService;
 
 import java.util.List;
@@ -26,13 +27,13 @@ public class CommentControllerImpl implements CommentController {
     }
 
     @Override
-    public CommentResponseDto createComment(CommentRequestDto commentDto, Long postId) {
-        return commentService.createComment(commentDto, postId);
+    public CommentResponseDto createComment(CreateCommentRequest commentRequest, Long postId) {
+        return commentService.createComment(commentRequest, postId);
     }
 
     @Override
-    public CommentResponseDto updateComment(CommentRequestDto commentDto, Long postId, Long commentId) {
-        return commentService.update(commentDto, postId, commentId);
+    public CommentResponseDto updateComment(UpdateCommentRequest commentRequest, Long postId, Long commentId) {
+        return commentService.update(commentRequest, postId, commentId);
     }
 
     @Override

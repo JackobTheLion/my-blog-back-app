@@ -5,8 +5,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import ru.practicum.yakovlev.dto.CommentRequestDto;
 import ru.practicum.yakovlev.dto.CommentResponseDto;
+import ru.practicum.yakovlev.dto.CreateCommentRequest;
+import ru.practicum.yakovlev.dto.UpdateCommentRequest;
 import ru.practicum.yakovlev.exception.CommentNotFoundException;
 import ru.practicum.yakovlev.mapper.CommentMapperImpl;
 import ru.practicum.yakovlev.model.Comment;
@@ -15,7 +16,8 @@ import ru.practicum.yakovlev.repository.CommentRepository;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @SpringJUnitConfig(classes = {CommentServiceImpl.class, CommentMapperImpl.class})
@@ -59,7 +61,7 @@ class CommentServiceImplTest {
     @Test
     @DisplayName("Creates and returns a comment")
     void shouldCreateAndReturnComment() {
-        CommentRequestDto request = new CommentRequestDto("comment", null);
+        CreateCommentRequest request = new CreateCommentRequest("comment", 10L);
         Comment saved = newComment(20L, "comment");
         CommentResponseDto response = newCommentDto(20L, "comment");
         when(commentRepository.save(any(Comment.class))).thenReturn(saved);
@@ -71,7 +73,7 @@ class CommentServiceImplTest {
     @Test
     @DisplayName("Updates an existing comment")
     void shouldUpdateExistingComment() {
-        CommentRequestDto request = new CommentRequestDto("new", 10L);
+        UpdateCommentRequest request = new UpdateCommentRequest(20L, "new", 10L);
         Comment existing = newComment(20L, "old");
         CommentResponseDto response = newCommentDto(20L, "new");
         when(commentRepository.findByIdAndPostId(10L, 20L)).thenReturn(Optional.of(existing));
@@ -79,6 +81,47 @@ class CommentServiceImplTest {
 
         assertEquals(response, commentService.update(request, 10L, 20L));
         verify(commentRepository).update(any(Comment.class));
+    }
+
+    @Test
+    @DisplayName("Rejects comment creation when post identifiers differ")
+    void shouldRejectCreationWhenPostIdentifiersDiffer() {
+        CreateCommentRequest request = new CreateCommentRequest("comment", 11L);
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> commentService.createComment(request, 10L)
+        );
+
+        assertEquals("Post id in path and body must match", exception.getMessage());
+        verifyNoInteractions(commentRepository);
+    }
+
+    @Test
+    @DisplayName("Rejects comment update when post identifiers differ")
+    void shouldRejectUpdateWhenPostIdentifiersDiffer() {
+        UpdateCommentRequest request = new UpdateCommentRequest(20L, "new", 11L);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> commentService.update(request, 10L, 20L)
+        );
+
+        verifyNoInteractions(commentRepository);
+    }
+
+    @Test
+    @DisplayName("Rejects comment update when comment identifiers differ")
+    void shouldRejectUpdateWhenCommentIdentifiersDiffer() {
+        UpdateCommentRequest request = new UpdateCommentRequest(21L, "new", 10L);
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> commentService.update(request, 10L, 20L)
+        );
+
+        assertEquals("Comment id in path and body must match", exception.getMessage());
+        verifyNoInteractions(commentRepository);
     }
 
     @Test

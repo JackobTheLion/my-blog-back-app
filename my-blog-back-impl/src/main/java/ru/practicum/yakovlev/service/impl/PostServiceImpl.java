@@ -5,9 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import ru.practicum.yakovlev.dto.CreatePostRequest;
 import ru.practicum.yakovlev.dto.FullPostResponseDto;
 import ru.practicum.yakovlev.dto.PageResponse;
-import ru.practicum.yakovlev.dto.PostRequestDto;
+import ru.practicum.yakovlev.dto.UpdatePostRequest;
 import ru.practicum.yakovlev.exception.ImageStorageException;
 import ru.practicum.yakovlev.exception.PostNotFoundException;
 import ru.practicum.yakovlev.mapper.PostMapper;
@@ -46,10 +47,10 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public FullPostResponseDto createPost(PostRequestDto postRequestDto) {
-        int tagCount = postRequestDto.tags() == null ? 0 : postRequestDto.tags().size();
+    public FullPostResponseDto createPost(CreatePostRequest postRequest) {
+        int tagCount = postRequest.tags().size();
         log.info("Creating post: tagCount={}", tagCount);
-        Post entity = postMapper.toEntity(postRequestDto);
+        Post entity = postMapper.toEntity(postRequest);
         Post saved = postRepository.save(entity);
         log.info("Post created: postId={}, tagCount={}", saved.getId(), tagCount);
         return postMapper.toFullPostResponseDto(saved);
@@ -57,13 +58,13 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public FullPostResponseDto updatePost(Long id, PostRequestDto postRequestDto) {
-        if (!id.equals(postRequestDto.id())) {
-            throw new IllegalStateException("Post id not match");
+    public FullPostResponseDto updatePost(Long id, UpdatePostRequest postRequest) {
+        if (!id.equals(postRequest.id())) {
+            throw new IllegalArgumentException("Post id in path and body must match");
         }
         log.info("Updating post: postId={}", id);
         Post existing = getPostOrThrow(id);
-        Post update = postMapper.update(existing, postRequestDto);
+        Post update = postMapper.update(existing, postRequest);
         update.setId(id);
         Post updated = postRepository.update(update);
         log.info("Post updated: postId={}", id);

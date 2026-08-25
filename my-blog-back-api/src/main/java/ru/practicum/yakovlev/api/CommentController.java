@@ -3,8 +3,9 @@ package ru.practicum.yakovlev.api;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.yakovlev.dto.CommentRequestDto;
 import ru.practicum.yakovlev.dto.CommentResponseDto;
+import ru.practicum.yakovlev.dto.CreateCommentRequest;
+import ru.practicum.yakovlev.dto.UpdateCommentRequest;
 
 import java.util.List;
 
@@ -20,11 +21,11 @@ public interface CommentController {
                                   @PathVariable("commentId") @Positive Long commentId);
 
     @PostMapping
-    CommentResponseDto createComment(@RequestBody @Valid CommentRequestDto commentDto,
+    CommentResponseDto createComment(@RequestBody @Valid CreateCommentRequest commentRequest,
                                      @PathVariable("postId") @Positive Long postId);
 
     @PutMapping("/{commentId}")
-    CommentResponseDto updateComment(@RequestBody @Valid CommentRequestDto commentDto,
+    CommentResponseDto updateComment(@RequestBody @Valid UpdateCommentRequest commentRequest,
                                      @PathVariable("postId") @Positive Long postId,
                                      @PathVariable("commentId") @Positive Long commentId);
 

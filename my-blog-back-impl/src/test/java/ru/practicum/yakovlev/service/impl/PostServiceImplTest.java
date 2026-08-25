@@ -6,10 +6,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.multipart.MultipartFile;
+import ru.practicum.yakovlev.dto.CreatePostRequest;
 import ru.practicum.yakovlev.dto.FullPostResponseDto;
 import ru.practicum.yakovlev.dto.PageResponse;
-import ru.practicum.yakovlev.dto.PostRequestDto;
-import ru.practicum.yakovlev.exception.ImageStorageException;
+import ru.practicum.yakovlev.dto.UpdatePostRequest;
 import ru.practicum.yakovlev.exception.PostNotFoundException;
 import ru.practicum.yakovlev.mapper.PostMapperImpl;
 import ru.practicum.yakovlev.mapper.TagMapperImpl;
@@ -75,7 +75,7 @@ class PostServiceImplTest {
     @Test
     @DisplayName("Creates and returns a post")
     void shouldCreateAndReturnPost() {
-        PostRequestDto request = new PostRequestDto(null, "title", "text", List.of("#java"));
+        CreatePostRequest request = new CreatePostRequest("title", "text", List.of("#java"));
         Post saved = newPost(1L, "title");
         FullPostResponseDto response = newPostDto(1L, "title");
         when(postRepository.save(any(Post.class))).thenReturn(saved);
@@ -87,7 +87,7 @@ class PostServiceImplTest {
     @Test
     @DisplayName("Updates an existing post when identifiers match")
     void shouldUpdateExistingPostWhenIdentifiersMatch() {
-        PostRequestDto request = new PostRequestDto(1L, "new", "new text", List.of());
+        UpdatePostRequest request = new UpdatePostRequest(1L, "new", "new text", List.of());
         Post existing = newPost(1L, "old");
         FullPostResponseDto response = new FullPostResponseDto(1L, "new", "new text", List.of(), 0L, 0L);
         when(postRepository.findById(1L)).thenReturn(Optional.of(existing));
@@ -100,14 +100,14 @@ class PostServiceImplTest {
     @Test
     @DisplayName("Rejects an update when path and body identifiers differ")
     void shouldRejectUpdateWhenPathAndBodyIdentifiersDiffer() {
-        PostRequestDto request = new PostRequestDto(2L, "title", "text", List.of());
+        UpdatePostRequest request = new UpdatePostRequest(2L, "title", "text", List.of());
 
-        IllegalStateException exception = assertThrows(
-                IllegalStateException.class,
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
                 () -> postService.updatePost(1L, request)
         );
 
-        assertEquals("Post id not match", exception.getMessage());
+        assertEquals("Post id in path and body must match", exception.getMessage());
         verifyNoInteractions(postRepository);
     }
 

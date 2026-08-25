@@ -4,8 +4,9 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
 import org.mapstruct.MappingTarget;
-import ru.practicum.yakovlev.dto.CommentRequestDto;
 import ru.practicum.yakovlev.dto.CommentResponseDto;
+import ru.practicum.yakovlev.dto.CreateCommentRequest;
+import ru.practicum.yakovlev.dto.UpdateCommentRequest;
 import ru.practicum.yakovlev.model.Comment;
 
 import java.util.List;
@@ -18,11 +19,10 @@ public interface CommentMapper {
     List<CommentResponseDto> toDto(List<Comment> comments);
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "postId", source = "postId")
-    Comment toEntity(CommentRequestDto commentRequestDto, Long postId);
+    Comment toEntity(CreateCommentRequest commentRequest);
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "postId", ignore = true)
-    Comment update(@MappingTarget Comment target, CommentRequestDto source);
+    Comment update(@MappingTarget Comment target, UpdateCommentRequest source);
 
 }

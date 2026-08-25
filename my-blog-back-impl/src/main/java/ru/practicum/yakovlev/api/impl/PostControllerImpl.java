@@ -4,9 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import ru.practicum.yakovlev.api.PostController;
+import ru.practicum.yakovlev.dto.CreatePostRequest;
 import ru.practicum.yakovlev.dto.FullPostResponseDto;
 import ru.practicum.yakovlev.dto.PageResponse;
-import ru.practicum.yakovlev.dto.PostRequestDto;
+import ru.practicum.yakovlev.dto.UpdatePostRequest;
 import ru.practicum.yakovlev.service.PostService;
 
 @RestController
@@ -21,13 +22,13 @@ public class PostControllerImpl implements PostController {
     }
 
     @Override
-    public FullPostResponseDto createPost(PostRequestDto postRequestDto) {
-        return postService.createPost(postRequestDto);
+    public FullPostResponseDto createPost(CreatePostRequest postRequest) {
+        return postService.createPost(postRequest);
     }
 
     @Override
-    public FullPostResponseDto updatePost(Long id, PostRequestDto postRequestDto) {
-        return postService.updatePost(id, postRequestDto);
+    public FullPostResponseDto updatePost(Long id, UpdatePostRequest postRequest) {
+        return postService.updatePost(id, postRequest);
     }
 
     @Override
