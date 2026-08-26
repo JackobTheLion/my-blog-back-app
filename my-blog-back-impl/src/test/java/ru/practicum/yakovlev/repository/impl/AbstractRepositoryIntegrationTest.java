@@ -11,7 +11,8 @@ import ru.practicum.yakovlev.AbstractIntegrationTest;
         DatabaseConfig.class,
         JdbcTagRepository.class,
         JdbcPostRepository.class,
-        JdbcCommentRepository.class
+        JdbcCommentRepository.class,
+        JdbcImageCleanupOutboxRepository.class
 })
 abstract class AbstractRepositoryIntegrationTest extends AbstractIntegrationTest {
 
@@ -27,10 +28,13 @@ abstract class AbstractRepositoryIntegrationTest extends AbstractIntegrationTest
     @Autowired
     protected JdbcCommentRepository commentRepository;
 
+    @Autowired
+    protected JdbcImageCleanupOutboxRepository imageCleanupOutboxRepository;
+
     @BeforeEach
     void clearDatabase() {
         jdbcTemplate.getJdbcTemplate().execute(
-                "TRUNCATE TABLE post_tags, comments, tags, posts RESTART IDENTITY CASCADE"
+                "TRUNCATE TABLE image_cleanup_outbox, post_tags, comments, tags, posts RESTART IDENTITY CASCADE"
         );
     }
 }

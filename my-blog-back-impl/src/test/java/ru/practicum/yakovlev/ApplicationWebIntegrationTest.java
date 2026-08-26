@@ -36,7 +36,7 @@ class ApplicationWebIntegrationTest extends AbstractIntegrationTest {
     @BeforeEach
     void setUp() {
         jdbcTemplate.getJdbcTemplate().execute(
-                "TRUNCATE TABLE post_tags, comments, tags, posts RESTART IDENTITY CASCADE"
+                "TRUNCATE TABLE image_cleanup_outbox, post_tags, comments, tags, posts RESTART IDENTITY CASCADE"
         );
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
     }

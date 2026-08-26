@@ -13,8 +13,10 @@ import ru.practicum.yakovlev.exception.ImageStorageException;
 import ru.practicum.yakovlev.exception.PostNotFoundException;
 import ru.practicum.yakovlev.mapper.PostMapper;
 import ru.practicum.yakovlev.model.Post;
+import ru.practicum.yakovlev.repository.ImageCleanupOutboxRepository;
 import ru.practicum.yakovlev.repository.PostRepository;
 import ru.practicum.yakovlev.repository.SearchCriteria;
+import ru.practicum.yakovlev.service.PostImageUpdateService;
 import ru.practicum.yakovlev.service.PostService;
 import ru.practicum.yakovlev.storage.ImageStorage;
 import ru.practicum.yakovlev.util.SearchCriteriaUtil;
@@ -30,6 +32,8 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final PostMapper postMapper;
     private final ImageStorage imageStorage;
+    private final ImageCleanupOutboxRepository outboxRepository;
+    private final PostImageUpdateService postImageUpdateService;
 
     @Override
     public PageResponse getPosts(String searchRequest, Integer page, Integer size) {
@@ -84,7 +88,9 @@ public class PostServiceImpl implements PostService {
         log.info("Deleting post: postId={}", id);
         Post post = getPostOrThrow(id);
         postRepository.deleteById(id);
-        imageStorage.delete(post.getImagePath());
+        if (post.getImagePath() != null && !post.getImagePath().isBlank()) {
+            outboxRepository.enqueueDelete(post.getImagePath());
+        }
         log.info("Post deleted: postId={}", id);
     }
 
@@ -100,8 +106,7 @@ public class PostServiceImpl implements PostService {
     public void savePostImage(Long id, MultipartFile image) {
         log.info("Updating post image: postId={}, originalFilename={}, sizeBytes={}",
                 id, image.getOriginalFilename(), image.getSize());
-        Post post = getPostOrThrow(id);
-        String oldPath = post.getImagePath();
+        getPostOrThrow(id);
         byte[] content;
         try {
             content = image.getBytes();
@@ -112,16 +117,11 @@ public class PostServiceImpl implements PostService {
 
         String newPath = imageStorage.save(id, image.getOriginalFilename(), content);
         try {
-            postRepository.updateImagePath(id, newPath);
+            postImageUpdateService.updateImagePath(id, newPath);
         } catch (RuntimeException exception) {
-            try {
-                imageStorage.delete(newPath);
-            } catch (RuntimeException cleanupException) {
-                exception.addSuppressed(cleanupException);
-            }
+            deleteNewImage(newPath);
             throw exception;
         }
-        imageStorage.delete(oldPath);
         log.info("Post image updated: postId={}, path={}", id, newPath);
     }
 
@@ -136,6 +136,14 @@ public class PostServiceImpl implements PostService {
     private Post getPostOrThrow(Long id) {
         return postRepository.findById(id)
                 .orElseThrow(() -> new PostNotFoundException("Post with id " + id + " was not found"));
+    }
+
+    private void deleteNewImage(String path) {
+        try {
+            imageStorage.delete(path);
+        } catch (RuntimeException cleanupException) {
+            log.error("Failed to clean up a new image after update failure: path={}", path, cleanupException);
+        }
     }
 
 }

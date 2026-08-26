@@ -32,7 +32,12 @@ public class FileSystemImageStorage implements ImageStorage {
             Files.write(target, content);
             log.info("Image saved: postId={}, path={}, sizeBytes={}", postId, target, content.length);
             return storageKey;
-        } catch (IOException exception) {
+        } catch (Exception exception) {
+            try {
+                Files.deleteIfExists(target);
+            } catch (Exception cleanupException) {
+                exception.addSuppressed(cleanupException);
+            }
             throw new ImageStorageException("Failed to save image for post " + postId, exception);
         }
     }

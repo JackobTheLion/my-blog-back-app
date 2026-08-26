@@ -65,6 +65,10 @@ erDiagram
 | `BLOG_DATASOURCE_PASSWORD` | да | Пароль PostgreSQL |
 | `BLOG_DATASOURCE_SCHEMA` | нет | Схема БД, по умолчанию `my_blog` |
 | `BLOG_IMAGE_STORAGE_DIRECTORY` | нет | Каталог изображений, по умолчанию `./data/images` Используйте абсолютный путь для каталога изображений.|
+| `BLOG_IMAGE_CLEANUP_FIXED_DELAY_MS` | нет | Интервал между запусками очистки изображений, по умолчанию `60000` мс |
+| `BLOG_IMAGE_CLEANUP_INITIAL_DELAY_MS` | нет | Задержка первого запуска очистки изображений, по умолчанию `60000` мс |
+| `BLOG_IMAGE_CLEANUP_BATCH_SIZE` | нет | Количество задач очистки в одном пакете, по умолчанию `100` |
+| `BLOG_IMAGE_CLEANUP_MAX_BATCHES_PER_RUN` | нет | Максимальное количество пакетов за один запуск, по умолчанию `10` |
 
 При старте приложение выполняет `schema.sql` и создаёт недостающие объекты. 
 
@@ -94,6 +98,10 @@ export BLOG_DATASOURCE_USERNAME=blog
 export BLOG_DATASOURCE_PASSWORD=change-me
 export BLOG_DATASOURCE_SCHEMA=my_blog
 export BLOG_IMAGE_STORAGE_DIRECTORY=/var/lib/my-blog/images
+export BLOG_IMAGE_CLEANUP_FIXED_DELAY_MS=60000
+export BLOG_IMAGE_CLEANUP_INITIAL_DELAY_MS=60000
+export BLOG_IMAGE_CLEANUP_BATCH_SIZE=100
+export BLOG_IMAGE_CLEANUP_MAX_BATCHES_PER_RUN=10
 ```
 
 Соберите и скопируйте WAR:

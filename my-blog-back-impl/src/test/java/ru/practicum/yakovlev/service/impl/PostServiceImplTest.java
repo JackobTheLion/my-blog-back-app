@@ -2,6 +2,7 @@ package ru.practicum.yakovlev.service.impl;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -14,7 +15,9 @@ import ru.practicum.yakovlev.exception.PostNotFoundException;
 import ru.practicum.yakovlev.mapper.PostMapperImpl;
 import ru.practicum.yakovlev.mapper.TagMapperImpl;
 import ru.practicum.yakovlev.model.Post;
+import ru.practicum.yakovlev.repository.ImageCleanupOutboxRepository;
 import ru.practicum.yakovlev.repository.PostRepository;
+import ru.practicum.yakovlev.service.PostImageUpdateService;
 import ru.practicum.yakovlev.storage.ImageStorage;
 
 import java.io.IOException;
@@ -32,6 +35,10 @@ class PostServiceImplTest {
     private PostRepository postRepository;
     @MockitoBean
     private ImageStorage imageStorage;
+    @MockitoBean
+    private ImageCleanupOutboxRepository outboxRepository;
+    @MockitoBean
+    private PostImageUpdateService postImageUpdateService;
 
     @Autowired
     private PostServiceImpl postService;
@@ -139,7 +146,7 @@ class PostServiceImplTest {
         postService.deletePost(1L);
 
         verify(postRepository).deleteById(1L);
-        verify(imageStorage).delete("1/image.png");
+        verify(outboxRepository).enqueueDelete("1/image.png");
     }
 
     @Test
@@ -150,7 +157,7 @@ class PostServiceImplTest {
         assertThrows(PostNotFoundException.class, () -> postService.deletePost(404L));
 
         verify(postRepository, never()).deleteById(anyLong());
-        verifyNoInteractions(imageStorage);
+        verifyNoInteractions(outboxRepository);
     }
 
     @Test
@@ -173,8 +180,8 @@ class PostServiceImplTest {
     }
 
     @Test
-    @DisplayName("Replaces a post image and deletes the old file")
-    void shouldReplacePostImageAndDeleteOldFile() throws IOException {
+    @DisplayName("Saves a new image before updating its database path")
+    void shouldSaveNewImageBeforeUpdatingDatabasePath() throws IOException {
         Post entity = newPost(1L, "post");
         entity.setImagePath("1/old.png");
         byte[] content = {1, 2, 3};
@@ -185,13 +192,14 @@ class PostServiceImplTest {
 
         postService.savePostImage(1L, image);
 
-        verify(postRepository).updateImagePath(1L, "1/new.png");
-        verify(imageStorage).delete("1/old.png");
+        InOrder inOrder = inOrder(imageStorage, postImageUpdateService);
+        inOrder.verify(imageStorage).save(1L, "new.png", content);
+        inOrder.verify(postImageUpdateService).updateImagePath(1L, "1/new.png");
     }
 
     @Test
-    @DisplayName("Deletes the new image when the database update fails")
-    void shouldDeleteNewImageWhenDatabaseUpdateFails() throws IOException {
+    @DisplayName("Deletes the new image when its database transaction fails")
+    void shouldDeleteNewImageWhenDatabaseTransactionFails() throws IOException {
         byte[] content = {1, 2, 3};
         Post entity = newPost(1L, "post");
         entity.setImagePath("1/old.png");
@@ -200,12 +208,31 @@ class PostServiceImplTest {
         when(image.getBytes()).thenReturn(content);
         when(imageStorage.save(1L, "new.png", content)).thenReturn("1/new.png");
         doThrow(new IllegalStateException("database unavailable"))
-                .when(postRepository).updateImagePath(1L, "1/new.png");
+                .when(postImageUpdateService).updateImagePath(1L, "1/new.png");
 
-        assertThrows(IllegalStateException.class, () -> postService.savePostImage(1L, image));
-
+        assertThrows(
+                IllegalStateException.class,
+                () -> postService.savePostImage(1L, image)
+        );
         verify(imageStorage).delete("1/new.png");
-        verify(imageStorage, never()).delete("1/old.png");
+    }
+
+    @Test
+    @DisplayName("Does not update the database when saving the new image fails")
+    void shouldNotUpdateDatabaseWhenSavingImageFails() throws IOException {
+        byte[] content = {1, 2, 3};
+        Post entity = newPost(1L, "post");
+        when(postRepository.findById(1L)).thenReturn(Optional.of(entity));
+        when(image.getOriginalFilename()).thenReturn("new.png");
+        when(image.getBytes()).thenReturn(content);
+        doThrow(new IllegalStateException("disk unavailable"))
+                .when(imageStorage).save(1L, "new.png", content);
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> postService.savePostImage(1L, image)
+        );
+        verifyNoInteractions(postImageUpdateService);
     }
 
     @Test
