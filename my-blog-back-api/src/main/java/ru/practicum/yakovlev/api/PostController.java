@@ -1,6 +1,7 @@
 package ru.practicum.yakovlev.api;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import org.springframework.web.bind.annotation.*;
@@ -16,8 +17,11 @@ public interface PostController {
 
     @GetMapping
     PageResponse getPosts(@RequestParam("search") String searchRequest,
-                          @RequestParam("pageNumber") @Min(value = 1, message = "Page number must be greater than zero") Integer page,
-                          @RequestParam("pageSize") @Min(value = 1, message = "Page size must be greater than zero") Integer size);
+                          @RequestParam("pageNumber")
+                          @Min(value = ApiConstants.MIN_PAGE_NUMBER, message = "Page number must be greater than zero") Integer page,
+                          @RequestParam("pageSize")
+                          @Min(value = ApiConstants.MIN_PAGE_SIZE, message = "Page size must be greater than zero")
+                          @Max(value = ApiConstants.MAX_PAGE_SIZE, message = "Page size must not exceed {value}") Integer size);
 
     @PostMapping
     FullPostResponseDto createPost(@RequestBody @Valid CreatePostRequest postRequest);

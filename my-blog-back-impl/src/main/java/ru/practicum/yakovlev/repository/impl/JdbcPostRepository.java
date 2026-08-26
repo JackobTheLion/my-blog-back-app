@@ -11,6 +11,7 @@ import ru.practicum.yakovlev.model.Tag;
 import ru.practicum.yakovlev.repository.PostRepository;
 import ru.practicum.yakovlev.repository.SearchCriteria;
 import ru.practicum.yakovlev.repository.TagRepository;
+import ru.practicum.yakovlev.util.TagNormalizer;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -189,21 +190,24 @@ public class JdbcPostRepository implements PostRepository {
             conditions.add("LOWER(p.title) LIKE :titlePattern");
             parameters.addValue(
                     "titlePattern",
-                    "%" + titlePart.toLowerCase() + "%"
+                    "%" + titlePart.toLowerCase(Locale.ROOT) + "%"
             );
         }
         List<String> tags = criteria.tags() == null
                 ? List.of()
-                : criteria.tags().stream().distinct().toList();
+                : criteria.tags().stream()
+                .map(TagNormalizer::normalize)
+                .distinct()
+                .toList();
         if (!tags.isEmpty()) {
             conditions.add("""
                     p.id IN (
                         SELECT pt.post_id
                         FROM post_tags pt
                         JOIN tags t ON t.id = pt.tag_id
-                        WHERE LOWER(t.name) IN (:tags)
+                        WHERE t.name IN (:tags)
                         GROUP BY pt.post_id
-                        HAVING COUNT(DISTINCT LOWER(t.name)) = :tagCount
+                        HAVING COUNT(DISTINCT t.name) = :tagCount
                     )
                     """);
             parameters.addValue("tags", tags);

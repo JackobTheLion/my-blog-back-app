@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
 import ru.practicum.yakovlev.model.Tag;
 import ru.practicum.yakovlev.repository.TagRepository;
+import ru.practicum.yakovlev.util.TagNormalizer;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -67,10 +68,11 @@ public class JdbcTagRepository implements TagRepository {
 
         List<String> tagNames = tags.stream()
                 .map(Tag::getText)
+                .map(TagNormalizer::normalize)
+                .distinct()
                 .toList();
 
-        SqlParameterSource[] tagParameters = tags.stream()
-                .map(Tag::getText)
+        SqlParameterSource[] tagParameters = tagNames.stream()
                 .map(name -> new MapSqlParameterSource("name", name))
                 .toArray(SqlParameterSource[]::new);
         jdbcTemplate.batchUpdate("""

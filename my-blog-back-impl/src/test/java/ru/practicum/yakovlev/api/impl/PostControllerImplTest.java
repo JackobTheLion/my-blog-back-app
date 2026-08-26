@@ -95,6 +95,33 @@ class PostControllerImplTest {
     }
 
     @Test
+    @DisplayName("Accepts the maximum page size")
+    void shouldAcceptMaximumPageSize() throws Exception {
+        when(postService.getPosts("", 1, 100))
+                .thenReturn(new PageResponse(List.of(), false, false, 0L));
+
+        mockMvc.perform(get("/posts")
+                        .param("search", "")
+                        .param("pageNumber", "1")
+                        .param("pageSize", "100"))
+                .andExpect(status().isOk());
+
+        verify(postService).getPosts("", 1, 100);
+    }
+
+    @Test
+    @DisplayName("Rejects a page size above the maximum")
+    void shouldRejectPageSizeAboveMaximum() throws Exception {
+        mockMvc.perform(get("/posts")
+                        .param("search", "")
+                        .param("pageNumber", "1")
+                        .param("pageSize", "101"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(postService);
+    }
+
+    @Test
     @DisplayName("Deserializes a post creation request")
     void shouldDeserializePostCreationRequest() throws Exception {
         when(postService.createPost(any())).thenReturn(postDto());

@@ -20,7 +20,7 @@ public class SearchCriteriaUtil {
         LinkedList<String> tags = new LinkedList<>();
         for (String s : split) {
             if (s.startsWith("#")) {
-                tags.add(s.toLowerCase());
+                tags.add(TagNormalizer.normalize(s));
             } else {
                 titleParts.add(s);
             }

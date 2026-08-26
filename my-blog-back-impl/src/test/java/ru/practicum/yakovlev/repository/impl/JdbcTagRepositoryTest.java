@@ -31,7 +31,7 @@ class JdbcTagRepositoryTest extends AbstractRepositoryIntegrationTest {
 
         List<Tag> persisted = tagRepository.addAllForPost(
                 postId,
-                List.of(tag("#java"), tag("#java"), tag("#spring"), tag("#spring"))
+                List.of(tag("#java"), tag(" #JAVA "), tag("#spring"), tag("#SPRING"))
         );
 
         assertEquals(List.of("#java", "#spring"), tagTexts(persisted));
@@ -43,11 +43,12 @@ class JdbcTagRepositoryTest extends AbstractRepositoryIntegrationTest {
     void shouldReuseExistingTagForAnotherPost() {
         long firstPostId = savedPostId();
         long secondPostId = savedPostId();
-        Tag first = tagRepository.addAllForPost(firstPostId, List.of(tag("#shared"))).getFirst();
+        Tag first = tagRepository.addAllForPost(firstPostId, List.of(tag(" #SHARED "))).getFirst();
 
         Tag second = tagRepository.addAllForPost(secondPostId, List.of(tag("#shared"))).getFirst();
 
         assertEquals(first.getId(), second.getId());
+        assertEquals("#shared", second.getText());
     }
 
     @Test

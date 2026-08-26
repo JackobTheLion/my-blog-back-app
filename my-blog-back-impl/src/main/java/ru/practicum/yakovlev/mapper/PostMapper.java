@@ -10,6 +10,7 @@ import ru.practicum.yakovlev.dto.FullPostResponseDto;
 import ru.practicum.yakovlev.dto.UpdatePostRequest;
 import ru.practicum.yakovlev.model.Post;
 import ru.practicum.yakovlev.model.Tag;
+import ru.practicum.yakovlev.util.TagNormalizer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,6 +57,8 @@ public abstract class PostMapper {
             return new ArrayList<>();
         }
         return tags.stream()
+                .map(TagNormalizer::normalize)
+                .distinct()
                 .map(tag -> new Tag(null, tag))
                 .toList();
     }

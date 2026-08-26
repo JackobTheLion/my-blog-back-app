@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS my_blog.comments (
 
 CREATE TABLE IF NOT EXISTS my_blog.tags (
     id BIGSERIAL PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE
+    name TEXT NOT NULL UNIQUE,
+    CONSTRAINT chk_tags_name_normalized CHECK (name = LOWER(BTRIM(name)))
 );
 
 CREATE TABLE IF NOT EXISTS my_blog.post_tags (
@@ -29,6 +30,20 @@ CREATE TABLE IF NOT EXISTS my_blog.post_tags (
     CONSTRAINT fk_post_tags_post FOREIGN KEY (post_id) REFERENCES my_blog.posts (id) ON DELETE CASCADE,
     CONSTRAINT fk_post_tags_tag FOREIGN KEY (tag_id) REFERENCES my_blog.tags (id) ON DELETE CASCADE
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_tags_normalized_name
+    ON my_blog.tags (LOWER(BTRIM(name)));
+
+CREATE INDEX IF NOT EXISTS idx_comments_post_id_id
+    ON my_blog.comments (post_id, id);
+
+CREATE INDEX IF NOT EXISTS idx_post_tags_tag_id_post_id
+    ON my_blog.post_tags (tag_id, post_id);
+
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+CREATE INDEX IF NOT EXISTS idx_posts_title_trgm
+    ON my_blog.posts USING GIN (LOWER(title) gin_trgm_ops);
 
 CREATE TABLE IF NOT EXISTS my_blog.image_cleanup_outbox (
     id BIGSERIAL PRIMARY KEY,

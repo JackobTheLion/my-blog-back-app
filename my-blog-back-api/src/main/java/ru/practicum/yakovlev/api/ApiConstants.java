@@ -8,6 +8,12 @@ public class ApiConstants {
 
     public static final String COMMENTS_BASE_PATH = POSTS_BASE_PATH + "/{postId}/comments";
 
+    public static final int MIN_PAGE_NUMBER = 1;
+
+    public static final int MIN_PAGE_SIZE = 1;
+
+    public static final int MAX_PAGE_SIZE = 100;
+
     private ApiConstants() {
     }
 

@@ -69,7 +69,7 @@ class JdbcPostRepositoryTest extends AbstractRepositoryIntegrationTest {
     @Test
     @DisplayName("Filters posts by one tag without regard to case")
     void shouldFilterPostsBySingleTagIgnoringCase() {
-        Post matching = postRepository.save(newPost("matching", "text", "#JAVA"));
+        Post matching = postRepository.save(newPost("matching", "text", " #JAVA "));
         postRepository.save(newPost("other", "text", "#spring"));
         SearchCriteria criteria = criteria("", "#java");
 
@@ -77,7 +77,7 @@ class JdbcPostRepositoryTest extends AbstractRepositoryIntegrationTest {
 
         assertAll(
                 () -> assertEquals(List.of(matching.getId()), postIds(result)),
-                () -> assertEquals(List.of("#JAVA"), tagTexts(result.getFirst())),
+                () -> assertEquals(List.of("#java"), tagTexts(result.getFirst())),
                 () -> assertEquals(1L, postRepository.count(criteria))
         );
     }
