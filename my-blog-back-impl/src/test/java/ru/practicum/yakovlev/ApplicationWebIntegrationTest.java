@@ -14,6 +14,8 @@ import org.springframework.web.context.WebApplicationContext;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -94,6 +96,25 @@ class ApplicationWebIntegrationTest extends AbstractIntegrationTest {
                 () -> assertFalse(page.path("hasPrev").booleanValue()),
                 () -> assertFalse(page.path("hasNext").booleanValue()),
                 () -> assertEquals(1L, page.path("lastPage").longValue())
+        );
+    }
+
+    @Test
+    @DisplayName("Returns HTTP 404 when creating a comment for a missing post")
+    void shouldReturnNotFoundWhenCreatingCommentForMissingPost() throws Exception {
+        JsonNode problem = responseBody(mockMvc.perform(post("/posts/404/comments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"text":"orphan comment","postId":404}
+                                """))
+                .andExpect(status().isNotFound()));
+
+        Long commentsCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM comments", Map.of(), Long.class);
+        assertAll(
+                () -> assertEquals(404, problem.path("status").intValue()),
+                () -> assertEquals("Not Found", problem.path("title").stringValue()),
+                () -> assertEquals("Post with id 404 was not found", problem.path("detail").stringValue()),
+                () -> assertEquals(0L, commentsCount)
         );
     }
 

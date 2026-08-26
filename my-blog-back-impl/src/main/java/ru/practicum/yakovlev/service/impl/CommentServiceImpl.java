@@ -2,16 +2,21 @@ package ru.practicum.yakovlev.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.postgresql.util.PSQLState;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import ru.practicum.yakovlev.dto.CommentResponseDto;
 import ru.practicum.yakovlev.dto.CreateCommentRequest;
 import ru.practicum.yakovlev.dto.UpdateCommentRequest;
 import ru.practicum.yakovlev.exception.CommentNotFoundException;
+import ru.practicum.yakovlev.exception.PostNotFoundException;
 import ru.practicum.yakovlev.mapper.CommentMapper;
 import ru.practicum.yakovlev.model.Comment;
 import ru.practicum.yakovlev.repository.CommentRepository;
+import ru.practicum.yakovlev.repository.PostRepository;
 import ru.practicum.yakovlev.service.CommentService;
 
+import java.sql.SQLException;
 import java.util.List;
 
 @Service
@@ -20,6 +25,7 @@ import java.util.List;
 public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
+    private final PostRepository postRepository;
     private final CommentMapper commentMapper;
 
     @Override
@@ -42,9 +48,20 @@ public class CommentServiceImpl implements CommentService {
         if (!postId.equals(commentRequest.postId())) {
             throw new IllegalArgumentException("Post id in path and body must match");
         }
+        if (!postRepository.isPostExists(postId)) {
+            throw new PostNotFoundException("Post with id %s was not found".formatted(postId));
+        }
         log.info("Creating comment: postId={}", postId);
         Comment entity = commentMapper.toEntity(commentRequest);
-        Comment save = commentRepository.save(entity);
+        Comment save;
+        try {
+            save = commentRepository.save(entity);
+        } catch (DataIntegrityViolationException exception) {
+            if (isForeignKeyViolation(exception)) {
+                throw new PostNotFoundException("Post with id %s was not found".formatted(postId));
+            }
+            throw exception;
+        }
         log.info("Comment created: postId={}, commentId={}", postId, save.getId());
         return commentMapper.toDto(save);
     }
@@ -75,6 +92,11 @@ public class CommentServiceImpl implements CommentService {
     private Comment getCommentOrThrow(Long postId, Long commentId) {
         return commentRepository.findByIdAndPostId(postId, commentId)
                 .orElseThrow(() -> new CommentNotFoundException("Comment id %s of post id %s not found".formatted(commentId, postId)));
+    }
+
+    private boolean isForeignKeyViolation(DataIntegrityViolationException exception) {
+        return exception.getMostSpecificCause() instanceof SQLException sqlException
+                && PSQLState.FOREIGN_KEY_VIOLATION.getState().equals(sqlException.getSQLState());
     }
 
 }

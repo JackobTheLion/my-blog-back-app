@@ -6,16 +6,15 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ru.practicum.yakovlev.exception.CommentNotFoundException;
 import ru.practicum.yakovlev.exception.ImageStorageException;
-import ru.practicum.yakovlev.exception.PostNotFoundException;
+import ru.practicum.yakovlev.exception.NotFoundException;
 
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler({PostNotFoundException.class, CommentNotFoundException.class})
-    public ResponseEntity<ProblemDetail> handleNotFound(RuntimeException exception) {
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ProblemDetail> handleNotFound(NotFoundException exception) {
         log.warn("Requested resource was not found: {}", exception.getMessage());
         return createResponse(HttpStatus.NOT_FOUND, exception.getMessage());
     }

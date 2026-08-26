@@ -2,17 +2,22 @@ package ru.practicum.yakovlev.service.impl;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.postgresql.util.PSQLState;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import ru.practicum.yakovlev.dto.CommentResponseDto;
 import ru.practicum.yakovlev.dto.CreateCommentRequest;
 import ru.practicum.yakovlev.dto.UpdateCommentRequest;
 import ru.practicum.yakovlev.exception.CommentNotFoundException;
+import ru.practicum.yakovlev.exception.PostNotFoundException;
 import ru.practicum.yakovlev.mapper.CommentMapperImpl;
 import ru.practicum.yakovlev.model.Comment;
 import ru.practicum.yakovlev.repository.CommentRepository;
+import ru.practicum.yakovlev.repository.PostRepository;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +30,9 @@ class CommentServiceImplTest {
 
     @MockitoBean
     private CommentRepository commentRepository;
+
+    @MockitoBean
+    private PostRepository postRepository;
 
     @Autowired
     private CommentServiceImpl commentService;
@@ -64,10 +72,51 @@ class CommentServiceImplTest {
         CreateCommentRequest request = new CreateCommentRequest("comment", 10L);
         Comment saved = newComment(20L, "comment");
         CommentResponseDto response = newCommentDto(20L, "comment");
+        when(postRepository.isPostExists(10L)).thenReturn(true);
         when(commentRepository.save(any(Comment.class))).thenReturn(saved);
 
         assertEquals(response, commentService.createComment(request, 10L));
+        verify(postRepository).isPostExists(10L);
         verify(commentRepository).save(any(Comment.class));
+    }
+
+    @Test
+    @DisplayName("Throws when creating a comment for a missing post")
+    void shouldThrowWhenCreatingCommentForMissingPost() {
+        CreateCommentRequest request = new CreateCommentRequest("comment", 404L);
+        when(postRepository.isPostExists(404L)).thenReturn(false);
+
+        PostNotFoundException exception = assertThrows(
+                PostNotFoundException.class,
+                () -> commentService.createComment(request, 404L)
+        );
+
+        assertEquals("Post with id 404 was not found", exception.getMessage());
+        verify(postRepository).isPostExists(404L);
+        verifyNoInteractions(commentRepository);
+    }
+
+    @Test
+    @DisplayName("Converts a comments post foreign key violation to a missing post error")
+    void shouldConvertCommentsPostForeignKeyViolationToMissingPost() {
+        CreateCommentRequest request = new CreateCommentRequest("comment", 10L);
+        SQLException sqlException = new SQLException(
+                "Foreign key violation",
+                PSQLState.FOREIGN_KEY_VIOLATION.getState()
+        );
+        DataIntegrityViolationException violation = new DataIntegrityViolationException(
+                "Constraint violation",
+                sqlException
+        );
+        when(postRepository.isPostExists(10L)).thenReturn(true);
+        when(commentRepository.save(any(Comment.class))).thenThrow(violation);
+
+        PostNotFoundException exception = assertThrows(
+                PostNotFoundException.class,
+                () -> commentService.createComment(request, 10L)
+        );
+
+        assertEquals("Post with id 10 was not found", exception.getMessage());
     }
 
     @Test
