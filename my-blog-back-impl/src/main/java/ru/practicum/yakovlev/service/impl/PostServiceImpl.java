@@ -2,9 +2,11 @@ package ru.practicum.yakovlev.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tika.Tika;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import ru.practicum.yakovlev.config.AllowedImageTypes;
 import ru.practicum.yakovlev.dto.CreatePostRequest;
 import ru.practicum.yakovlev.dto.FullPostResponseDto;
 import ru.practicum.yakovlev.dto.PageResponse;
@@ -34,6 +36,8 @@ public class PostServiceImpl implements PostService {
     private final ImageStorage imageStorage;
     private final ImageCleanupOutboxRepository outboxRepository;
     private final PostImageUpdateService postImageUpdateService;
+    private final Tika tika;
+    private final AllowedImageTypes allowedImageTypes;
 
     @Override
     public PageResponse getPosts(String searchRequest, Integer page, Integer size) {
@@ -104,24 +108,16 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public void savePostImage(Long id, MultipartFile image) {
+        validateImageNotEmpty(image);
         log.info("Updating post image: postId={}, originalFilename={}, sizeBytes={}",
                 id, image.getOriginalFilename(), image.getSize());
         getPostOrThrow(id);
-        byte[] content;
-        try {
-            content = image.getBytes();
-        } catch (IOException exception) {
-            throw new ImageStorageException("Failed to read uploaded image for post %s. Reason: %s".formatted(id, exception.getMessage()),
-                    exception);
-        }
 
+        byte[] content = readImageContent(id, image);
+        validateImageType(content);
         String newPath = imageStorage.save(id, image.getOriginalFilename(), content);
-        try {
-            postImageUpdateService.updateImagePath(id, newPath);
-        } catch (RuntimeException exception) {
-            deleteNewImage(newPath);
-            throw exception;
-        }
+        updateImagePath(id, newPath);
+
         log.info("Post image updated: postId={}, path={}", id, newPath);
     }
 
@@ -136,6 +132,40 @@ public class PostServiceImpl implements PostService {
     private Post getPostOrThrow(Long id) {
         return postRepository.findById(id)
                 .orElseThrow(() -> new PostNotFoundException("Post with id " + id + " was not found"));
+    }
+
+    private void validateImageNotEmpty(MultipartFile image) {
+        if (image.isEmpty()) {
+            throw new IllegalArgumentException("Uploaded image must not be empty");
+        }
+    }
+
+    private byte[] readImageContent(Long postId, MultipartFile image) {
+        try {
+            return image.getBytes();
+        } catch (IOException exception) {
+            throw new ImageStorageException(
+                    "Failed to read uploaded image for post %s. Reason: %s"
+                            .formatted(postId, exception.getMessage()),
+                    exception
+            );
+        }
+    }
+
+    private void validateImageType(byte[] content) {
+        String mediaType = tika.detect(content);
+        if (!allowedImageTypes.contains(mediaType)) {
+            throw new IllegalArgumentException("Image type is not allowed: " + mediaType);
+        }
+    }
+
+    private void updateImagePath(Long postId, String newPath) {
+        try {
+            postImageUpdateService.updateImagePath(postId, newPath);
+        } catch (RuntimeException exception) {
+            deleteNewImage(newPath);
+            throw exception;
+        }
     }
 
     private void deleteNewImage(String path) {

@@ -28,6 +28,7 @@
         <testcontainers.version>2.0.5</testcontainers.version>
         <hibernate-validator.version>9.1.3.Final</hibernate-validator.version>
         <expressly.version>6.0.0</expressly.version>
+        <tika.version>3.3.2</tika.version>
     </properties>
 
     <dependencyManagement>
@@ -130,6 +131,12 @@
                 <groupId>org.glassfish.expressly</groupId>
                 <artifactId>expressly</artifactId>
                 <version>${expressly.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.tika</groupId>
+                <artifactId>tika-core</artifactId>
+                <version>${tika.version}</version>
             </dependency>
 
         </dependencies>

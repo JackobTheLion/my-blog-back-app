@@ -1,5 +1,6 @@
 package ru.practicum.yakovlev.service.impl;
 
+import org.apache.tika.Tika;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -7,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.multipart.MultipartFile;
+import ru.practicum.yakovlev.config.AllowedImageTypes;
 import ru.practicum.yakovlev.dto.CreatePostRequest;
 import ru.practicum.yakovlev.dto.FullPostResponseDto;
 import ru.practicum.yakovlev.dto.PageResponse;
@@ -39,6 +41,10 @@ class PostServiceImplTest {
     private ImageCleanupOutboxRepository outboxRepository;
     @MockitoBean
     private PostImageUpdateService postImageUpdateService;
+    @MockitoBean
+    private Tika tika;
+    @MockitoBean
+    private AllowedImageTypes allowedImageTypes;
 
     @Autowired
     private PostServiceImpl postService;
@@ -188,6 +194,8 @@ class PostServiceImplTest {
         when(postRepository.findById(1L)).thenReturn(Optional.of(entity));
         when(image.getOriginalFilename()).thenReturn("new.png");
         when(image.getBytes()).thenReturn(content);
+        when(tika.detect(content)).thenReturn("image/png");
+        when(allowedImageTypes.contains("image/png")).thenReturn(true);
         when(imageStorage.save(1L, "new.png", content)).thenReturn("1/new.png");
 
         postService.savePostImage(1L, image);
@@ -206,6 +214,8 @@ class PostServiceImplTest {
         when(postRepository.findById(1L)).thenReturn(Optional.of(entity));
         when(image.getOriginalFilename()).thenReturn("new.png");
         when(image.getBytes()).thenReturn(content);
+        when(tika.detect(content)).thenReturn("image/png");
+        when(allowedImageTypes.contains("image/png")).thenReturn(true);
         when(imageStorage.save(1L, "new.png", content)).thenReturn("1/new.png");
         doThrow(new IllegalStateException("database unavailable"))
                 .when(postImageUpdateService).updateImagePath(1L, "1/new.png");
@@ -225,6 +235,8 @@ class PostServiceImplTest {
         when(postRepository.findById(1L)).thenReturn(Optional.of(entity));
         when(image.getOriginalFilename()).thenReturn("new.png");
         when(image.getBytes()).thenReturn(content);
+        when(tika.detect(content)).thenReturn("image/png");
+        when(allowedImageTypes.contains("image/png")).thenReturn(true);
         doThrow(new IllegalStateException("disk unavailable"))
                 .when(imageStorage).save(1L, "new.png", content);
 
@@ -233,6 +245,23 @@ class PostServiceImplTest {
                 () -> postService.savePostImage(1L, image)
         );
         verifyNoInteractions(postImageUpdateService);
+    }
+
+    @Test
+    @DisplayName("Rejects uploaded content that is not an allowed image")
+    void shouldRejectUnsupportedImageContent() throws IOException {
+        byte[] content = {1, 2, 3};
+        when(postRepository.findById(1L)).thenReturn(Optional.of(newPost(1L, "post")));
+        when(image.getBytes()).thenReturn(content);
+        when(tika.detect(content)).thenReturn("application/octet-stream");
+
+        IllegalArgumentException exception = assertThrows(
+                IllegalArgumentException.class,
+                () -> postService.savePostImage(1L, image)
+        );
+
+        assertEquals("Image type is not allowed: application/octet-stream", exception.getMessage());
+        verifyNoInteractions(imageStorage, postImageUpdateService);
     }
 
     @Test

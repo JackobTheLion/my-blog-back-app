@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import ru.practicum.yakovlev.dto.CreatePostRequest;
@@ -39,7 +40,7 @@ public interface PostController {
     @PostMapping("/{id}/likes")
     Long likePost(@PathVariable("id") @Positive Long id);
 
-    @PutMapping("/{id}/image")
+    @PutMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     void postImage(@PathVariable("id") @Positive Long id, @RequestParam("image") MultipartFile image);
 
     @GetMapping("/{id}/image")

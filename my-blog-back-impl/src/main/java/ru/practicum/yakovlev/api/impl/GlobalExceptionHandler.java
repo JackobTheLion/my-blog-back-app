@@ -6,6 +6,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import ru.practicum.yakovlev.exception.ImageStorageException;
 import ru.practicum.yakovlev.exception.NotFoundException;
 
@@ -23,6 +24,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ProblemDetail> handleBadRequest(IllegalArgumentException exception) {
         log.warn("Invalid request: {}", exception.getMessage());
         return createResponse(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ProblemDetail> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException exception) {
+        log.warn("Uploaded image is too large: {}", exception.getMessage());
+        return createResponse(HttpStatus.CONTENT_TOO_LARGE, "Image must not exceed 5 MB");
     }
 
     @ExceptionHandler(ImageStorageException.class)
