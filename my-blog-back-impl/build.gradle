@@ -1,0 +1,26 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.16'
+}
+
+dependencies {
+    implementation platform(project(':my-blog-back-app-bom'))
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    annotationProcessor platform(project(':my-blog-back-app-bom'))
+
+    implementation project(':my-blog-back-api')
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.mapstruct:mapstruct'
+    implementation 'org.postgresql:postgresql'
+    implementation 'org.apache.tika:tika-core'
+
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.mapstruct:mapstruct-processor'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.testcontainers:testcontainers-postgresql'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}

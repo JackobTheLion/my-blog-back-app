@@ -12,10 +12,10 @@ public abstract class AbstractIntegrationTest {
 
     @DynamicPropertySource
     protected static void databaseProperties(DynamicPropertyRegistry registry) {
-        registry.add("blog.datasource.url", POSTGRES::getJdbcUrl);
-        registry.add("blog.datasource.username", POSTGRES::getUsername);
-        registry.add("blog.datasource.password", POSTGRES::getPassword);
-        registry.add("blog.datasource.schema", () -> "my_blog");
+        registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
+        registry.add("spring.datasource.username", POSTGRES::getUsername);
+        registry.add("spring.datasource.password", POSTGRES::getPassword);
+        registry.add("spring.datasource.hikari.schema", () -> "my_blog");
         registry.add(
                 "blog.image-storage.directory",
                 () -> Path.of("target", "integration-test-images").toAbsolutePath().toString()

@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ProblemDetail> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException exception) {
         log.warn("Uploaded image is too large: {}", exception.getMessage());
-        return createResponse(HttpStatus.CONTENT_TOO_LARGE, "Image must not exceed 5 MB");
+        return createResponse(HttpStatus.PAYLOAD_TOO_LARGE, "Image must not exceed 5 MB");
     }
 
     @ExceptionHandler(ImageStorageException.class)

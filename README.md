@@ -1,17 +1,19 @@
 # My Blog Backend
 
-Backend для блога на Java 21 и Spring MVC. Приложение предоставляет REST API для работы с постами, тегами, комментариями, лайками и изображениями постов. Данные хранятся в PostgreSQL через Spring JDBC, изображения — в файловой системе.
+Backend для блога на Java 21 и Spring Boot 3.5.16. Приложение предоставляет REST API для работы с постами, тегами, комментариями, лайками и изображениями постов. Данные хранятся в PostgreSQL через Spring JDBC, изображения — в файловой системе.
 
 Загрузка изображений ограничена 5 МБ на файл и 6 МБ на multipart-запрос. По умолчанию разрешены PNG, JPEG и GIF; сервер определяет фактический тип файла по его содержимому.
 
-Приложение собирается в WAR и запускается в Tomcat.
+Приложение собирается в исполняемый JAR и запускается со встроенным Tomcat.
 
 ## Разрешённые типы изображений
 
-Список разрешённых типов задаётся в `application.properties` как перечень типов через запятую:
+Список разрешённых типов задаётся в `application.yaml` как перечень типов через запятую:
 
-```properties
-blog.image.allowed-types=${BLOG_IMAGE_ALLOWED_TYPES:image/png,image/jpeg,image/gif}
+```yaml
+blog:
+  image:
+    allowed-types: "${BLOG_IMAGE_ALLOWED_TYPES:image/png,image/jpeg,image/gif}"
 ```
 
 Для переопределения при запуске укажите переменную окружения, например:
@@ -24,8 +26,8 @@ blog.image.allowed-types=${BLOG_IMAGE_ALLOWED_TYPES:image/png,image/jpeg,image/g
 
 - `my-blog-back-app-bom` — единое управление версиями зависимостей.
 - `my-blog-back-api` — контракты REST-контроллеров и DTO.
-- `my-blog-back-impl` — реализация контроллеров, сервисы, JDBC-репозитории, модели, конфигурация и файловое хранилище. Результат сборки — WAR.
-- Корневой `pom.xml` — Maven-агрегатор и общие настройки Java 21.
+- `my-blog-back-impl` — реализация контроллеров, сервисы, JDBC-репозитории, модели, конфигурация и файловое хранилище. Результат сборки — исполняемый JAR.
+- Корневые `settings.gradle` и `build.gradle` — конфигурация многомодульной Gradle-сборки и общие настройки Java 21.
 
 ## Схема базы данных
 
@@ -67,15 +69,16 @@ erDiagram
 ## Требования
 
 - JDK 21;
-- Maven 3.9+;
+- Gradle Wrapper (входит в репозиторий);
 - PostgreSQL;
-- Tomcat 11;
 - Docker — только для интеграционных тестов с Testcontainers.
 
 ## Переменные окружения
 
 | Переменная | Обязательна | Описание / значение по умолчанию |
 | --- | --- | --- |
+| `SERVER_PORT` | нет | Порт встроенного сервера, по умолчанию `8080`|
+| `CONTEXT_PATH` | нет | Базовый путь приложения, по умолчанию `/`|
 | `BLOG_DATASOURCE_URL` | да | JDBC URL, например `jdbc:postgresql://localhost:5432/postgres` |
 | `BLOG_DATASOURCE_USERNAME` | да | Пользователь PostgreSQL |
 | `BLOG_DATASOURCE_PASSWORD` | да | Пароль PostgreSQL |
@@ -94,22 +97,24 @@ erDiagram
 Полная сборка с тестами:
 
 ```bash
-mvn clean package
+./gradlew clean build
 ```
 
-Для интеграционных тестов должен работать Docker. Собрать WAR без тестов можно с помощью:
+Для интеграционных тестов должен работать Docker. Собрать JAR без тестов можно с помощью:
 
 ```bash
-mvn clean package -DskipTests
+./gradlew clean bootJar -x test
 ```
 
-Готовый файл появится в `my-blog-back-impl/target/my-blog-back-impl-1.0-SNAPSHOT.war`.
+Готовый файл появится в `my-blog-back-impl/build/libs/my-blog-back-impl-1.0-SNAPSHOT.jar`.
 
-## Запуск и деплой в Tomcat
+## Запуск приложения
 
-Перед запуском передайте переменные окружения процессу Tomcat. Для постоянной конфигурации их можно добавить в `$CATALINA_BASE/bin/setenv.sh`:
+Перед запуском передайте приложению переменные окружения:
 
 ```bash
+export SERVER_PORT=8080
+export CONTEXT_PATH=/api
 export BLOG_DATASOURCE_URL=jdbc:postgresql://localhost:5432/postgres
 export BLOG_DATASOURCE_USERNAME=blog
 export BLOG_DATASOURCE_PASSWORD=change-me
@@ -121,13 +126,11 @@ export BLOG_IMAGE_CLEANUP_BATCH_SIZE=100
 export BLOG_IMAGE_CLEANUP_MAX_BATCHES_PER_RUN=10
 ```
 
-Соберите и скопируйте WAR:
+Соберите и запустите JAR:
 
 ```bash
-mvn clean package -DskipTests
-cp my-blog-back-impl/target/my-blog-back-impl-1.0-SNAPSHOT.war \
-  "$CATALINA_BASE/webapps/api.war"
-"$CATALINA_BASE/bin/catalina.sh" run
+./gradlew clean bootJar -x test
+java -jar my-blog-back-impl/build/libs/my-blog-back-impl-1.0-SNAPSHOT.jar
 ```
 
-Имя `api.war` задаёт context path `/api`, поэтому endpoint постов будет доступен по адресу `http://localhost:8080/api/posts`. Для остановки используйте `"$CATALINA_BASE/bin/catalina.sh" stop`.
+По умолчанию endpoint постов доступен по адресу `http://localhost:8080/posts`. Порт можно изменить переменной `SERVER_PORT`, а базовый путь — переменной `CONTEXT_PATH`. Например, при `CONTEXT_PATH=/api` endpoint будет доступен по адресу `http://localhost:8080/api/posts`.

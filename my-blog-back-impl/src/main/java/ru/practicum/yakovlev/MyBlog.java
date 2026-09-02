@@ -1,18 +1,13 @@
 package ru.practicum.yakovlev;
 
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@Configuration
-@EnableWebMvc
-@ComponentScan
-@PropertySource("classpath:application.properties")
+@SpringBootApplication
 public class MyBlog {
+
     public static void main(String[] args) {
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(MyBlog.class);
+        SpringApplication.run(MyBlog.class, args);
     }
 
 }

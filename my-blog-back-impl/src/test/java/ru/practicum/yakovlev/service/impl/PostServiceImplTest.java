@@ -5,8 +5,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.web.multipart.MultipartFile;
 import ru.practicum.yakovlev.config.AllowedImageTypes;
 import ru.practicum.yakovlev.dto.CreatePostRequest;
@@ -30,7 +30,10 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-@SpringJUnitConfig(classes = {PostServiceImpl.class, PostMapperImpl.class, TagMapperImpl.class})
+@SpringBootTest(
+        classes = {PostServiceImpl.class, PostMapperImpl.class, TagMapperImpl.class},
+        webEnvironment = SpringBootTest.WebEnvironment.NONE
+)
 class PostServiceImplTest {
 
     @MockitoBean

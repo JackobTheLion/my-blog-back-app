@@ -1,0 +1,30 @@
+server:
+  port: "${SERVER_PORT:8080}"
+  servlet:
+    context-path: "${CONTEXT_PATH:/}"
+
+spring:
+  datasource:
+    url: "${BLOG_DATASOURCE_URL}"
+    username: "${BLOG_DATASOURCE_USERNAME}"
+    password: "${BLOG_DATASOURCE_PASSWORD}"
+    hikari:
+      schema: "${BLOG_DATASOURCE_SCHEMA:my_blog}"
+  sql:
+    init:
+      mode: always
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+
+blog:
+  image-storage:
+    directory: "${BLOG_IMAGE_STORAGE_DIRECTORY:./data/images}"
+    cleanup:
+      fixed-delay-ms: "${BLOG_IMAGE_CLEANUP_FIXED_DELAY_MS:60000}"
+      initial-delay-ms: "${BLOG_IMAGE_CLEANUP_INITIAL_DELAY_MS:60000}"
+      batch-size: "${BLOG_IMAGE_CLEANUP_BATCH_SIZE:100}"
+      max-batches-per-run: "${BLOG_IMAGE_CLEANUP_MAX_BATCHES_PER_RUN:10}"
+  image:
+    allowed-types: "${BLOG_IMAGE_ALLOWED_TYPES:image/png,image/jpeg,image/gif}"

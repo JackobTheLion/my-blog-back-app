@@ -1,5 +1,7 @@
 package ru.practicum.yakovlev.api.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,9 +17,8 @@ import ru.practicum.yakovlev.dto.CreateCommentRequest;
 import ru.practicum.yakovlev.dto.UpdateCommentRequest;
 import ru.practicum.yakovlev.exception.CommentNotFoundException;
 import ru.practicum.yakovlev.service.CommentService;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
 
+import java.io.IOException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static ru.practicum.yakovlev.api.ApiConstants.POSTS_BASE_PATH;
 
 @ExtendWith(MockitoExtension.class)
 class CommentControllerImplTest {
@@ -49,7 +51,7 @@ class CommentControllerImplTest {
     void shouldBindPostIdAndSerializeComments() throws Exception {
         when(commentService.findAllByPostId(10L)).thenReturn(List.of(commentDto()));
 
-        JsonNode comments = responseBody(mockMvc.perform(get("/posts/10/comments"))
+        JsonNode comments = responseBody(mockMvc.perform(get(POSTS_BASE_PATH + "/10/comments"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON)));
 
@@ -64,7 +66,7 @@ class CommentControllerImplTest {
     void shouldBindPostAndCommentPathVariables() throws Exception {
         when(commentService.getComment(10L, 20L)).thenReturn(commentDto());
 
-        JsonNode comment = responseBody(mockMvc.perform(get("/posts/10/comments/20"))
+        JsonNode comment = responseBody(mockMvc.perform(get(POSTS_BASE_PATH + "/10/comments/20"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON)));
 
@@ -78,7 +80,7 @@ class CommentControllerImplTest {
         CreateCommentRequest request = new CreateCommentRequest("comment", 10L);
         when(commentService.createComment(request, 10L)).thenReturn(commentDto());
 
-        JsonNode comment = responseBody(mockMvc.perform(post("/posts/10/comments")
+        JsonNode comment = responseBody(mockMvc.perform(post(POSTS_BASE_PATH + "/10/comments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"text":"comment","postId":10}
@@ -93,7 +95,7 @@ class CommentControllerImplTest {
     @Test
     @DisplayName("Rejects comment creation without a post identifier")
     void shouldRejectCommentCreationWithoutPostId() throws Exception {
-        mockMvc.perform(post("/posts/10/comments")
+        mockMvc.perform(post(POSTS_BASE_PATH + "/10/comments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"text":"comment"}
@@ -109,7 +111,7 @@ class CommentControllerImplTest {
         doThrow(new IllegalArgumentException("Post id in path and body must match"))
                 .when(commentService).createComment(any(), eq(10L));
 
-        mockMvc.perform(post("/posts/10/comments")
+        mockMvc.perform(post(POSTS_BASE_PATH + "/10/comments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"text":"comment","postId":11}
@@ -131,7 +133,7 @@ class CommentControllerImplTest {
     @Test
     @DisplayName("Rejects a blank comment")
     void shouldRejectBlankComment() throws Exception {
-        mockMvc.perform(post("/posts/10/comments")
+        mockMvc.perform(post(POSTS_BASE_PATH + "/10/comments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"text":" ","postId":10}
@@ -144,7 +146,7 @@ class CommentControllerImplTest {
     @Test
     @DisplayName("Rejects a non-positive path identifier")
     void shouldRejectNonPositivePathId() throws Exception {
-        mockMvc.perform(get("/posts/0/comments"))
+        mockMvc.perform(get(POSTS_BASE_PATH + "/0/comments"))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(commentService);
@@ -156,7 +158,7 @@ class CommentControllerImplTest {
         UpdateCommentRequest request = new UpdateCommentRequest(20L, "updated", 10L);
         when(commentService.update(request, 10L, 20L)).thenReturn(commentDto());
 
-        JsonNode comment = responseBody(mockMvc.perform(put("/posts/10/comments/20")
+        JsonNode comment = responseBody(mockMvc.perform(put(POSTS_BASE_PATH + "/10/comments/20")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"id":20,"text":"updated","postId":10}
@@ -171,7 +173,7 @@ class CommentControllerImplTest {
     @Test
     @DisplayName("Rejects comment update without a body identifier")
     void shouldRejectCommentUpdateWithoutBodyId() throws Exception {
-        mockMvc.perform(put("/posts/10/comments/20")
+        mockMvc.perform(put(POSTS_BASE_PATH + "/10/comments/20")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"text":"updated","postId":10}
@@ -187,7 +189,7 @@ class CommentControllerImplTest {
         doThrow(new IllegalArgumentException("Comment id in path and body must match"))
                 .when(commentService).update(any(), eq(10L), eq(20L));
 
-        mockMvc.perform(put("/posts/10/comments/20")
+        mockMvc.perform(put(POSTS_BASE_PATH + "/10/comments/20")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"id":21,"text":"updated","postId":10}
@@ -198,7 +200,7 @@ class CommentControllerImplTest {
     @Test
     @DisplayName("Delegates both path variables when deleting a comment")
     void shouldDelegatePathVariablesWhenDeletingComment() throws Exception {
-        mockMvc.perform(delete("/posts/10/comments/20"))
+        mockMvc.perform(delete(POSTS_BASE_PATH + "/10/comments/20"))
                 .andExpect(status().isOk())
                 .andExpect(content().bytes(new byte[0]));
 
@@ -211,14 +213,14 @@ class CommentControllerImplTest {
         when(commentService.getComment(10L, 404L))
                 .thenThrow(new CommentNotFoundException("Comment was not found"));
 
-        JsonNode problem = responseBody(mockMvc.perform(get("/posts/10/comments/404"))
+        JsonNode problem = responseBody(mockMvc.perform(get(POSTS_BASE_PATH + "/10/comments/404"))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON)));
 
         assertAll(
-                () -> assertEquals("Not Found", problem.path("title").stringValue()),
+                () -> assertEquals("Not Found", problem.path("title").textValue()),
                 () -> assertEquals(404, problem.path("status").intValue()),
-                () -> assertEquals("Comment was not found", problem.path("detail").stringValue())
+                () -> assertEquals("Comment was not found", problem.path("detail").textValue())
         );
     }
 
@@ -226,14 +228,14 @@ class CommentControllerImplTest {
         return new CommentResponseDto(20L, "comment", 10L);
     }
 
-    private static JsonNode responseBody(ResultActions resultActions) {
+    private static JsonNode responseBody(ResultActions resultActions) throws IOException {
         return JSON_MAPPER.readTree(resultActions.andReturn().getResponse().getContentAsByteArray());
     }
 
     private static void assertComment(JsonNode comment) {
         assertAll(
                 () -> assertEquals(20L, comment.path("id").longValue()),
-                () -> assertEquals("comment", comment.path("text").stringValue()),
+                () -> assertEquals("comment", comment.path("text").textValue()),
                 () -> assertEquals(10L, comment.path("postId").longValue())
         );
     }

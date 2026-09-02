@@ -1,5 +1,7 @@
 package ru.practicum.yakovlev.api.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,9 +21,8 @@ import ru.practicum.yakovlev.dto.UpdatePostRequest;
 import ru.practicum.yakovlev.exception.ImageStorageException;
 import ru.practicum.yakovlev.exception.PostNotFoundException;
 import ru.practicum.yakovlev.service.PostService;
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
 
+import java.io.IOException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,6 +30,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static ru.practicum.yakovlev.api.ApiConstants.POSTS_BASE_PATH;
 
 @ExtendWith(MockitoExtension.class)
 class PostControllerImplTest {
@@ -54,7 +56,7 @@ class PostControllerImplTest {
         when(postService.getPosts("spring", 2, 10))
                 .thenReturn(new PageResponse(List.of(postDto()), true, false, 2L));
 
-        JsonNode page = responseBody(mockMvc.perform(get("/posts")
+        JsonNode page = responseBody(mockMvc.perform(get(POSTS_BASE_PATH)
                         .param("search", "spring")
                         .param("pageNumber", "2")
                         .param("pageSize", "10"))
@@ -74,7 +76,7 @@ class PostControllerImplTest {
     @Test
     @DisplayName("Rejects a request with a missing pagination parameter")
     void shouldRejectMissingPaginationParameter() throws Exception {
-        mockMvc.perform(get("/posts")
+        mockMvc.perform(get(POSTS_BASE_PATH)
                         .param("search", "spring")
                         .param("pageNumber", "1"))
                 .andExpect(status().isBadRequest());
@@ -85,7 +87,7 @@ class PostControllerImplTest {
     @Test
     @DisplayName("Rejects invalid pagination values")
     void shouldRejectInvalidPaginationValues() throws Exception {
-        mockMvc.perform(get("/posts")
+        mockMvc.perform(get(POSTS_BASE_PATH)
                         .param("search", "")
                         .param("pageNumber", "0")
                         .param("pageSize", "10"))
@@ -100,7 +102,7 @@ class PostControllerImplTest {
         when(postService.getPosts("", 1, 100))
                 .thenReturn(new PageResponse(List.of(), false, false, 0L));
 
-        mockMvc.perform(get("/posts")
+        mockMvc.perform(get(POSTS_BASE_PATH)
                         .param("search", "")
                         .param("pageNumber", "1")
                         .param("pageSize", "100"))
@@ -112,7 +114,7 @@ class PostControllerImplTest {
     @Test
     @DisplayName("Rejects a page size above the maximum")
     void shouldRejectPageSizeAboveMaximum() throws Exception {
-        mockMvc.perform(get("/posts")
+        mockMvc.perform(get(POSTS_BASE_PATH)
                         .param("search", "")
                         .param("pageNumber", "1")
                         .param("pageSize", "101"))
@@ -126,7 +128,7 @@ class PostControllerImplTest {
     void shouldDeserializePostCreationRequest() throws Exception {
         when(postService.createPost(any())).thenReturn(postDto());
 
-        JsonNode post = responseBody(mockMvc.perform(post("/posts")
+        JsonNode post = responseBody(mockMvc.perform(post(POSTS_BASE_PATH)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"title":"title","text":"text","tags":["#java"]}
@@ -140,8 +142,9 @@ class PostControllerImplTest {
 
     @Test
     @DisplayName("Rejects a malformed post body")
+    @SuppressWarnings("JsonStandardCompliance")
     void shouldRejectMalformedPostBody() throws Exception {
-        mockMvc.perform(post("/posts")
+        mockMvc.perform(post(POSTS_BASE_PATH)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{not-json}"))
                 .andExpect(status().isBadRequest());
@@ -152,7 +155,7 @@ class PostControllerImplTest {
     @Test
     @DisplayName("Rejects invalid post fields")
     void shouldRejectInvalidPostFields() throws Exception {
-        mockMvc.perform(post("/posts")
+        mockMvc.perform(post(POSTS_BASE_PATH)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"title":" ","text":"","tags":[""]}
@@ -165,7 +168,7 @@ class PostControllerImplTest {
     @Test
     @DisplayName("Rejects post creation without tags")
     void shouldRejectPostCreationWithoutTags() throws Exception {
-        mockMvc.perform(post("/posts")
+        mockMvc.perform(post(POSTS_BASE_PATH)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"title":"title","text":"text"}
@@ -180,7 +183,7 @@ class PostControllerImplTest {
     void shouldBindPathIdAndBodyWhenUpdatingPost() throws Exception {
         when(postService.updatePost(eq(1L), any())).thenReturn(postDto());
 
-        JsonNode post = responseBody(mockMvc.perform(put("/posts/1")
+        JsonNode post = responseBody(mockMvc.perform(put(POSTS_BASE_PATH + "/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"id":1,"title":"title","text":"text","tags":[]}
@@ -195,7 +198,7 @@ class PostControllerImplTest {
     @Test
     @DisplayName("Rejects post update without a body identifier")
     void shouldRejectPostUpdateWithoutBodyId() throws Exception {
-        mockMvc.perform(put("/posts/1")
+        mockMvc.perform(put(POSTS_BASE_PATH + "/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"title":"title","text":"text","tags":[]}
@@ -211,7 +214,7 @@ class PostControllerImplTest {
         doThrow(new IllegalArgumentException("Post id in path and body must match"))
                 .when(postService).updatePost(eq(1L), any());
 
-        mockMvc.perform(put("/posts/1")
+        mockMvc.perform(put(POSTS_BASE_PATH + "/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"id":2,"title":"title","text":"text","tags":[]}
@@ -224,12 +227,12 @@ class PostControllerImplTest {
     void shouldDelegatePostIdWhenReadingAndDeletingPost() throws Exception {
         when(postService.findPost(1L)).thenReturn(postDto());
 
-        JsonNode post = responseBody(mockMvc.perform(get("/posts/1"))
+        JsonNode post = responseBody(mockMvc.perform(get(POSTS_BASE_PATH + "/1"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON)));
         assertPost(post);
 
-        mockMvc.perform(delete("/posts/1"))
+        mockMvc.perform(delete(POSTS_BASE_PATH + "/1"))
                 .andExpect(status().isOk())
                 .andExpect(content().bytes(new byte[0]));
 
@@ -242,7 +245,7 @@ class PostControllerImplTest {
     void shouldReturnUpdatedLikesCounter() throws Exception {
         when(postService.likePost(1L)).thenReturn(7L);
 
-        JsonNode likesCount = responseBody(mockMvc.perform(post("/posts/1/likes"))
+        JsonNode likesCount = responseBody(mockMvc.perform(post(POSTS_BASE_PATH + "/1/likes"))
                 .andExpect(status().isOk()));
 
         assertEquals(7L, likesCount.longValue());
@@ -255,7 +258,7 @@ class PostControllerImplTest {
                 "image", "photo.png", MediaType.IMAGE_PNG_VALUE, new byte[]{1, 2}
         );
 
-        mockMvc.perform(multipart(HttpMethod.PUT, "/posts/1/image").file(image))
+        mockMvc.perform(multipart(HttpMethod.PUT, POSTS_BASE_PATH + "/1/image").file(image))
                 .andExpect(status().isOk());
 
         verify(postService).savePostImage(1L, image);
@@ -267,7 +270,7 @@ class PostControllerImplTest {
         byte[] image = {1, 2, 3};
         when(postService.findPostImage(1L)).thenReturn(image);
 
-        mockMvc.perform(get("/posts/1/image"))
+        mockMvc.perform(get(POSTS_BASE_PATH + "/1/image"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_OCTET_STREAM))
                 .andExpect(content().bytes(image));
@@ -278,7 +281,7 @@ class PostControllerImplTest {
     void shouldConvertMissingPostToProblemDetail() throws Exception {
         when(postService.findPost(404L)).thenThrow(new PostNotFoundException("Post 404 was not found"));
 
-        JsonNode problem = responseBody(mockMvc.perform(get("/posts/404"))
+        JsonNode problem = responseBody(mockMvc.perform(get(POSTS_BASE_PATH + "/404"))
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON)));
 
@@ -292,7 +295,7 @@ class PostControllerImplTest {
                 new ImageStorageException("Image cannot be read", new java.io.IOException("disk error"))
         );
 
-        JsonNode problem = responseBody(mockMvc.perform(get("/posts/1/image"))
+        JsonNode problem = responseBody(mockMvc.perform(get(POSTS_BASE_PATH + "/1/image"))
                 .andExpect(status().isInternalServerError())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON)));
 
@@ -305,7 +308,7 @@ class PostControllerImplTest {
         when(postService.getPosts("invalid", 1, 10))
                 .thenThrow(new IllegalArgumentException("Invalid search request"));
 
-        JsonNode problem = responseBody(mockMvc.perform(get("/posts")
+        JsonNode problem = responseBody(mockMvc.perform(get(POSTS_BASE_PATH)
                         .param("search", "invalid")
                         .param("pageNumber", "1")
                         .param("pageSize", "10"))
@@ -319,17 +322,17 @@ class PostControllerImplTest {
         return new FullPostResponseDto(1L, "title", "text", List.of("#java"), 2L, 3L);
     }
 
-    private static JsonNode responseBody(ResultActions resultActions) {
+    private static JsonNode responseBody(ResultActions resultActions) throws IOException {
         return JSON_MAPPER.readTree(resultActions.andReturn().getResponse().getContentAsByteArray());
     }
 
     private static void assertPost(JsonNode post) {
         assertAll(
                 () -> assertEquals(1L, post.path("id").longValue()),
-                () -> assertEquals("title", post.path("title").stringValue()),
-                () -> assertEquals("text", post.path("text").stringValue()),
+                () -> assertEquals("title", post.path("title").textValue()),
+                () -> assertEquals("text", post.path("text").textValue()),
                 () -> assertEquals(1, post.path("tags").size()),
-                () -> assertEquals("#java", post.path("tags").get(0).stringValue()),
+                () -> assertEquals("#java", post.path("tags").get(0).textValue()),
                 () -> assertEquals(2L, post.path("likesCount").longValue()),
                 () -> assertEquals(3L, post.path("commentsCount").longValue())
         );
@@ -337,9 +340,9 @@ class PostControllerImplTest {
 
     private static void assertProblemDetail(JsonNode problem, int status, String title, String detail) {
         assertAll(
-                () -> assertEquals(title, problem.path("title").stringValue()),
+                () -> assertEquals(title, problem.path("title").textValue()),
                 () -> assertEquals(status, problem.path("status").intValue()),
-                () -> assertEquals(detail, problem.path("detail").stringValue())
+                () -> assertEquals(detail, problem.path("detail").textValue())
         );
     }
 }

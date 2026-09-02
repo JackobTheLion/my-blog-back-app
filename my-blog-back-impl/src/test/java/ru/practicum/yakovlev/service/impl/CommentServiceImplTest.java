@@ -4,9 +4,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.postgresql.util.PSQLState;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import ru.practicum.yakovlev.dto.CommentResponseDto;
 import ru.practicum.yakovlev.dto.CreateCommentRequest;
 import ru.practicum.yakovlev.dto.UpdateCommentRequest;
@@ -25,7 +25,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
-@SpringJUnitConfig(classes = {CommentServiceImpl.class, CommentMapperImpl.class})
+@SpringBootTest(
+        classes = {CommentServiceImpl.class, CommentMapperImpl.class},
+        webEnvironment = SpringBootTest.WebEnvironment.NONE
+)
 class CommentServiceImplTest {
 
     @MockitoBean

@@ -4,24 +4,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import ru.practicum.yakovlev.AbstractIntegrationTest;
-import ru.practicum.yakovlev.config.DatabaseConfig;
 import ru.practicum.yakovlev.config.ImageCleanupConfig;
 import ru.practicum.yakovlev.repository.impl.JdbcImageCleanupOutboxRepository;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 
-@SpringJUnitConfig(classes = {
-        DatabaseConfig.class,
-        JdbcImageCleanupOutboxRepository.class,
-        ImageCleanupConfig.class
-})
-@TestPropertySource("classpath:application.properties")
+@SpringBootTest
 class ImageCleanupOutboxIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
