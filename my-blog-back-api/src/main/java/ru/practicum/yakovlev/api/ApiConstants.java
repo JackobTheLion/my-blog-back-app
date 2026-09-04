@@ -2,7 +2,7 @@ package ru.practicum.yakovlev.api;
 
 public class ApiConstants {
 
-    public static final String BASE_PATH = "/api";
+    public static final String BASE_PATH = "";
 
     public static final String POSTS_BASE_PATH = BASE_PATH + "/posts";
 

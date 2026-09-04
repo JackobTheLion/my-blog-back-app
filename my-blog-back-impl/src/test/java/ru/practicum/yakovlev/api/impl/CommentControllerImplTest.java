@@ -122,7 +122,7 @@ class CommentControllerImplTest {
     @Test
     @DisplayName("Rejects a malformed comment body")
     void shouldRejectMalformedCommentBody() throws Exception {
-        mockMvc.perform(post("/posts/10/comments")
+        mockMvc.perform(post(POSTS_BASE_PATH + "/10/comments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{"))
                 .andExpect(status().isBadRequest());

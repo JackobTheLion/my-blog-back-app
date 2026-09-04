@@ -69,7 +69,7 @@ erDiagram
 ## Требования
 
 - JDK 21;
-- Gradle Wrapper (входит в репозиторий);
+- Gradle Wrapper (входит в репозиторий, [gradlew](gradlew) и [gradlew.bat](gradlew.bat));
 - PostgreSQL;
 - Docker — только для интеграционных тестов с Testcontainers.
 
