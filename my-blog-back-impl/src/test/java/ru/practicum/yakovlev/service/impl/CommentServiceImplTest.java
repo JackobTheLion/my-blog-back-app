@@ -1,12 +1,13 @@
 package ru.practicum.yakovlev.service.impl;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.postgresql.util.PSQLState;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import ru.practicum.yakovlev.dto.CommentResponseDto;
 import ru.practicum.yakovlev.dto.CreateCommentRequest;
 import ru.practicum.yakovlev.dto.UpdateCommentRequest;
@@ -25,20 +26,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest(
-        classes = {CommentServiceImpl.class, CommentMapperImpl.class},
-        webEnvironment = SpringBootTest.WebEnvironment.NONE
-)
+@ExtendWith(MockitoExtension.class)
 class CommentServiceImplTest {
 
-    @MockitoBean
+    @Mock
     private CommentRepository commentRepository;
 
-    @MockitoBean
+    @Mock
     private PostRepository postRepository;
 
-    @Autowired
     private CommentServiceImpl commentService;
+
+    @BeforeEach
+    void setUp() {
+        commentService = new CommentServiceImpl(commentRepository, postRepository, new CommentMapperImpl());
+    }
 
     @Test
     @DisplayName("Returns all comments for a post")

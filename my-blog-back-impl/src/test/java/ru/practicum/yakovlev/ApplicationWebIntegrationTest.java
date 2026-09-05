@@ -5,8 +5,6 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -23,8 +21,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static ru.practicum.yakovlev.api.ApiConstants.POSTS_BASE_PATH;
 
-@SpringBootTest
-@AutoConfigureMockMvc
 class ApplicationWebIntegrationTest extends AbstractIntegrationTest {
 
     private static final JsonMapper JSON_MAPPER = JsonMapper.builder().build();
