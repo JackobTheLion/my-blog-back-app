@@ -1,12 +1,13 @@
 package ru.practicum.yakovlev.service.impl;
 
 import org.apache.tika.Tika;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
 import ru.practicum.yakovlev.config.AllowedImageTypes;
 import ru.practicum.yakovlev.dto.CreatePostRequest;
@@ -15,7 +16,6 @@ import ru.practicum.yakovlev.dto.PageResponse;
 import ru.practicum.yakovlev.dto.UpdatePostRequest;
 import ru.practicum.yakovlev.exception.PostNotFoundException;
 import ru.practicum.yakovlev.mapper.PostMapperImpl;
-import ru.practicum.yakovlev.mapper.TagMapperImpl;
 import ru.practicum.yakovlev.model.Post;
 import ru.practicum.yakovlev.repository.ImageCleanupOutboxRepository;
 import ru.practicum.yakovlev.repository.PostRepository;
@@ -25,31 +25,43 @@ import ru.practicum.yakovlev.storage.ImageStorage;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-@SpringJUnitConfig(classes = {PostServiceImpl.class, PostMapperImpl.class, TagMapperImpl.class})
+@ExtendWith(MockitoExtension.class)
 class PostServiceImplTest {
 
-    @MockitoBean
+    @Mock
     private PostRepository postRepository;
-    @MockitoBean
+    @Mock
     private ImageStorage imageStorage;
-    @MockitoBean
+    @Mock
     private ImageCleanupOutboxRepository outboxRepository;
-    @MockitoBean
+    @Mock
     private PostImageUpdateService postImageUpdateService;
-    @MockitoBean
+    @Mock
     private Tika tika;
-    @MockitoBean
-    private AllowedImageTypes allowedImageTypes;
+    @Mock
+    private MultipartFile image;
 
-    @Autowired
     private PostServiceImpl postService;
 
-    private final MultipartFile image = mock(MultipartFile.class);
+    @BeforeEach
+    void setUp() {
+        PostMapperImpl postMapper = new PostMapperImpl();
+        postService = new PostServiceImpl(
+                postRepository,
+                postMapper,
+                imageStorage,
+                outboxRepository,
+                postImageUpdateService,
+                tika,
+                new AllowedImageTypes(Set.of("image/png", "image/jpeg", "image/gif"))
+        );
+    }
 
     @Test
     @DisplayName("Returns mapped posts with pagination flags")
@@ -195,7 +207,6 @@ class PostServiceImplTest {
         when(image.getOriginalFilename()).thenReturn("new.png");
         when(image.getBytes()).thenReturn(content);
         when(tika.detect(content)).thenReturn("image/png");
-        when(allowedImageTypes.contains("image/png")).thenReturn(true);
         when(imageStorage.save(1L, "new.png", content)).thenReturn("1/new.png");
 
         postService.savePostImage(1L, image);
@@ -215,7 +226,6 @@ class PostServiceImplTest {
         when(image.getOriginalFilename()).thenReturn("new.png");
         when(image.getBytes()).thenReturn(content);
         when(tika.detect(content)).thenReturn("image/png");
-        when(allowedImageTypes.contains("image/png")).thenReturn(true);
         when(imageStorage.save(1L, "new.png", content)).thenReturn("1/new.png");
         doThrow(new IllegalStateException("database unavailable"))
                 .when(postImageUpdateService).updateImagePath(1L, "1/new.png");
@@ -236,7 +246,6 @@ class PostServiceImplTest {
         when(image.getOriginalFilename()).thenReturn("new.png");
         when(image.getBytes()).thenReturn(content);
         when(tika.detect(content)).thenReturn("image/png");
-        when(allowedImageTypes.contains("image/png")).thenReturn(true);
         doThrow(new IllegalStateException("disk unavailable"))
                 .when(imageStorage).save(1L, "new.png", content);
 

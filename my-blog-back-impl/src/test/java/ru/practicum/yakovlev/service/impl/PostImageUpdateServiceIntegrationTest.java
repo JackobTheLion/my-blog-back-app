@@ -6,14 +6,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import ru.practicum.yakovlev.AbstractIntegrationTest;
-import ru.practicum.yakovlev.config.DatabaseConfig;
-import ru.practicum.yakovlev.repository.impl.JdbcImageCleanupOutboxRepository;
-import ru.practicum.yakovlev.repository.impl.JdbcPostRepository;
-import ru.practicum.yakovlev.repository.impl.JdbcTagRepository;
 import ru.practicum.yakovlev.service.PostImageUpdateService;
 
 import java.util.List;
@@ -22,13 +17,6 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SpringJUnitConfig(classes = {
-        DatabaseConfig.class,
-        JdbcTagRepository.class,
-        JdbcPostRepository.class,
-        JdbcImageCleanupOutboxRepository.class,
-        PostImageUpdateServiceImpl.class
-})
 class PostImageUpdateServiceIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired

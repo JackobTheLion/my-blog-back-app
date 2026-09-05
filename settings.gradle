@@ -1,0 +1,5 @@
+rootProject.name = 'my-blog-back'
+
+include 'my-blog-back-app-bom'
+include 'my-blog-back-api'
+include 'my-blog-back-impl'
